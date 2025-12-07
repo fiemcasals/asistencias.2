@@ -4,35 +4,39 @@
 <h1>{{ materia.diplomatura.nombre }} · {{ materia.nombre }}</h1>
 
 {% if request.user.nivel|default:1 >= 2 %}
-  <div class="actions">
-    {% if materia.profesor_titular_id == request.user.id %}
-    <a class="btn" href="{% url 'asistencias:crear_clase' materia.id %}">+ Crear clase</a>
-    <a class="btn" href="{% url 'asistencias:listado_presentes' materia.id %}">Ver presentes/ausentes</a>
-    <a class="btn" href="{% url 'asistencias:token_adjunto' materia.id %}">Generar token adjunto</a>
-    <a class="btn" href="{% url 'asistencias:exportar_asistencia_materia' materia.id %}">Exportar Asistencia</a>
-    {% endif %}
-  </div>
+<div class="actions">
+  {% if materia.profesor_titular_id == request.user.id %}
+  <a class="btn" href="{% url 'asistencias:crear_clase' materia.id %}">+ Crear clase</a>
+  <a class="btn" href="{% url 'asistencias:listado_presentes' materia.id %}">Ver presentes/ausentes</a>
+  <a class="btn" href="{% url 'asistencias:token_adjunto' materia.id %}">Generar token adjunto</a>
+  {% endif %}
+
+  {% if materia.profesor_titular_id == request.user.id or es_docente or es_coord %}
+  <a class="btn" href="{% url 'asistencias:exportar_asistencia_materia' materia.id %}">Exportar Asistencia</a>
+  {% endif %}
+</div>
 {% endif %}
 
 {% for c in clases %}
-  <div class="card">
-    <h3>{{ c.fecha }} — {{ c.hora_inicio }}–{{ c.hora_fin }}</h3>
-    {% if c.ventana_activa %}
-      <a class="btn" href="{% url 'asistencias:marcar_presente' c.id %}">Dar presente</a>
-    {% else %}
-      <span class="badge">Fuera de horario</span>
-    {% endif %}
-  </div>
+<div class="card">
+  <h3>{{ c.fecha }} — {{ c.hora_inicio }}–{{ c.hora_fin }}</h3>
+  {% if c.ventana_activa %}
+  <a class="btn" href="{% url 'asistencias:marcar_presente' c.id %}">Dar presente</a>
+  {% else %}
+  <span class="badge">Fuera de horario</span>
+  {% endif %}
+</div>
 {% empty %}
-  <p><em>Sin clases.</em></p>
+<p><em>Sin clases.</em></p>
 {% endfor %}
 {% if request.user.is_authenticated %}
-  {% if not materia.profesores.all|dictsort:'user_id'|yesno:'x,' %}{% endif %}{# (truco para no chocar: mejor verificar en la vista y pasar un flag) #}
-  <form method="post" action="{% url 'asistencias:desinscribirse_materia' materia.id %}"
-        style="display:inline" onsubmit="return confirm('¿Seguro que querés desinscribirte?');">
-    {% csrf_token %}
-    <button class="btn danger" type="submit">Desinscribirme</button>
-  </form>
+{% if not materia.profesores.all|dictsort:'user_id'|yesno:'x,' %}{% endif %}{# (truco para no chocar: mejor verificar en
+la vista y pasar un flag) #}
+<form method="post" action="{% url 'asistencias:desinscribirse_materia' materia.id %}" style="display:inline"
+  onsubmit="return confirm('¿Seguro que querés desinscribirte?');">
+  {% csrf_token %}
+  <button class="btn danger" type="submit">Desinscribirme</button>
+</form>
 {% endif %}
 
 {% endblock %}
