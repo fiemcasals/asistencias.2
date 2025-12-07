@@ -41,5 +41,6 @@ urlpatterns = [
 
     #exportar datos
     path('exportar/xlsx/', views.exportar_xlsx, name='exportar_xlsx'),
+    path('materias/<int:materia_id>/exportar-asistencia/', views.exportar_asistencia_materia, name='exportar_asistencia_materia'),
 
 ]

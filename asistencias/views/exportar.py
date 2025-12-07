@@ -18,10 +18,14 @@ def _dt(v):
         return localtime(v).strftime("%Y-%m-%d %H:%M:%S")
     return v.strftime("%Y-%m-%d")
 
+from openpyxl.utils import get_column_letter
+
 def _autosize(ws):
     for col in ws.columns:
         max_len = 0
-        col_letter = col[0].column_letter
+        # Use get_column_letter instead of accessing column_letter directly on the cell,
+        # which might be a MergedCell
+        col_letter = get_column_letter(col[0].column)
         for cell in col:
             try:
                 val = str(cell.value) if cell.value is not None else ""
@@ -161,6 +165,92 @@ def exportar_xlsx(request):
     buffer.seek(0)
 
     filename = f"asistencias_export_{localtime(timezone.now()).strftime('%Y%m%d_%H%M%S')}.xlsx"
+    resp = HttpResponse(
+        buffer.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    resp["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return resp
+
+
+def exportar_asistencia_materia(request, materia_id):
+    """
+    Exporta una planilla de asistencia para una materia específica.
+    Permisos: Nivel >= 3 (Coordinador) o Nivel 2 (Docente) si es titular o adjunto de la materia.
+    """
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden("No autenticado.")
+
+    # Obtener materia o 404
+    try:
+        materia = Materia.objects.get(pk=materia_id)
+    except Materia.DoesNotExist:
+        return HttpResponseForbidden("Materia no encontrada.")
+
+    # Verificación de permisos
+    tiene_permiso = False
+    if request.user.nivel >= 3:
+        tiene_permiso = True
+    elif request.user.nivel == 2:
+        # Verificar si es titular
+        if materia.profesor_titular_id == request.user.id:
+            tiene_permiso = True
+        else:
+            # Verificar si es adjunto
+            es_adjunto = ProfesorMateria.objects.filter(user=request.user, materia=materia).exists()
+            if es_adjunto:
+                tiene_permiso = True
+    
+    if not tiene_permiso:
+        return HttpResponseForbidden("No tiene permisos para exportar asistencia de esta materia.")
+
+    # Obtener Clases
+    clases = Clase.objects.filter(materia=materia).order_by('fecha')
+    
+    # Obtener Alumnos inscriptos
+    inscripciones = InscripcionMateria.objects.filter(materia=materia).select_related('user').order_by('user__last_name', 'user__first_name')
+    alumnos = [i.user for i in inscripciones]
+
+    # Obtener Asistencias
+    # Diccionario: {(user_id, clase_id): presente (bool)}
+    asistencias_qs = Asistencia.objects.filter(clase__materia=materia)
+    asistencias_map = {(a.user_id, a.clase_id): a.presente for a in asistencias_qs}
+
+    # Generar Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Asistencia"
+
+    # Título
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(clases) + 2)
+    ws.cell(row=1, column=1, value=f"Materia: {materia.nombre} - Diplomatura: {materia.diplomatura.nombre}")
+
+    # Encabezados
+    headers = ["Alumno"] + [_dt(c.fecha) for c in clases]
+    ws.append(headers)
+
+    # Filas de alumnos
+    for alumno in alumnos:
+        row = [f"{alumno.last_name}, {alumno.first_name}"]
+        for clase in clases:
+            presente = asistencias_map.get((alumno.id, clase.id))
+            if presente is True:
+                val = "P"
+            elif presente is False:
+                val = "A"
+            else:
+                val = "-" # No hay registro (ausente o no tomada)
+            row.append(val)
+        ws.append(row)
+
+    _autosize(ws)
+
+    # Respuesta HTTP
+    buffer = BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    filename = f"asistencia_{materia.codigo}_{localtime(timezone.now()).strftime('%Y%m%d')}.xlsx"
     resp = HttpResponse(
         buffer.getvalue(),
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

@@ -9,6 +9,7 @@
     <a class="btn" href="{% url 'asistencias:crear_clase' materia.id %}">+ Crear clase</a>
     <a class="btn" href="{% url 'asistencias:listado_presentes' materia.id %}">Ver presentes/ausentes</a>
     <a class="btn" href="{% url 'asistencias:token_adjunto' materia.id %}">Generar token adjunto</a>
+    <a class="btn" href="{% url 'asistencias:exportar_asistencia_materia' materia.id %}">Exportar Asistencia</a>
     {% endif %}
   </div>
 {% endif %}

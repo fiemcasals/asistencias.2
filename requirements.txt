@@ -13,6 +13,5 @@ psycopg2-binary
 python-dotenv
 #para exportar excel con datos
 openpyxl>=3.1.0
-#para variables de entorno
-python-dotenv
+
 

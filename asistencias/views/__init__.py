@@ -9,7 +9,7 @@ from .docente import crear_materia, crear_clase, listado_presentes, generar_toke
 from .coordinador import crear_diplomatura, cargar_excel_inscripciones
 from .reportes import exportar_reportes
 from .publico import publico, consulta_publica
-from .exportar import exportar_xlsx
+from .exportar import exportar_xlsx, exportar_asistencia_materia
 
 __all__ = [
     # alumno
@@ -27,5 +27,5 @@ __all__ = [
     # público
     "publico", "consulta_publica",
      # exportar
-    "exportar_xlsx",
+    "exportar_xlsx", "exportar_asistencia_materia",
 ]
