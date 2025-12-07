@@ -30,13 +30,13 @@
 <p><em>Sin clases.</em></p>
 {% endfor %}
 {% if request.user.is_authenticated %}
-{% if not materia.profesores.all|dictsort:'user_id'|yesno:'x,' %}{% endif %}{# (truco para no chocar: mejor verificar en
-la vista y pasar un flag) #}
+{% if not es_docente %}
 <form method="post" action="{% url 'asistencias:desinscribirse_materia' materia.id %}" style="display:inline"
   onsubmit="return confirm('¿Seguro que querés desinscribirte?');">
   {% csrf_token %}
   <button class="btn danger" type="submit">Desinscribirme</button>
 </form>
+{% endif %}
 {% endif %}
 
 {% endblock %}
