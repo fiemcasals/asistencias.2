@@ -32,13 +32,20 @@ def generar_constancia(request):
             return render(request, 'asistencias/generar_constancia.html', {'error': 'Alumno no encontrado con ese DNI.'})
 
         # Buscar diplomatura del alumno
-        # Asumimos que el alumno tiene una inscripción a diplomatura
-        inscripcion = InscripcionDiplomatura.objects.filter(user=alumno).first()
+        # 1. Intentar buscar inscripción directa a diplomatura
+        inscripcion_diplo = InscripcionDiplomatura.objects.filter(user=alumno).first()
         
-        if not inscripcion:
-             return render(request, 'asistencias/generar_constancia.html', {'error': 'El alumno no está inscripto en ninguna diplomatura.'})
-        
-        diplomatura = inscripcion.diplomatura
+        if inscripcion_diplo:
+            diplomatura = inscripcion_diplo.diplomatura
+        else:
+            # 2. Si no, buscar inscripción a alguna materia y obtener la diplomatura de ahí
+            from ..models import InscripcionMateria
+            inscripcion_materia = InscripcionMateria.objects.filter(user=alumno).select_related('materia__diplomatura').first()
+            
+            if inscripcion_materia:
+                diplomatura = inscripcion_materia.materia.diplomatura
+            else:
+                return render(request, 'asistencias/generar_constancia.html', {'error': 'El alumno no está inscripto en ninguna diplomatura ni materia.'})
 
         # Verificar si el coordinador tiene acceso a esta diplomatura (si no es admin)
         if request.user.nivel != 5:

@@ -55,4 +55,17 @@ class GenerarConstanciaTest(TestCase):
         response = self.client.post(self.url, {'dni': '87654321'})
         
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'no está inscripto en ninguna diplomatura')
+        self.assertContains(response, 'no está inscripto en ninguna diplomatura ni materia')
+
+    def test_alumno_con_materia_sin_diplo(self):
+        # Crear materia y asociar al alumno sin diplo
+        from asistencias.models import Materia, InscripcionMateria
+        materia = Materia.objects.create(diplomatura=self.diplomatura, nombre='Materia Test', codigo='M1', profesor_titular=self.admin)
+        InscripcionMateria.objects.create(user=self.alumno_sin_diplo, materia=materia)
+
+        self.client.force_login(self.coordinador)
+        response = self.client.post(self.url, {'dni': '87654321'})
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        self.assertIn('attachment; filename="constancia_87654321.pdf"', response['Content-Disposition'])
