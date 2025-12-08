@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Generar Constancia{% endblock %}
+
+{% block content %}
+<h1>Generar Constancia de Alumno Regular</h1>
+
+{% if error %}
+<div class="alert error">
+    {{ error }}
+</div>
+{% endif %}
+
+<form method="post" class="card">
+    {% csrf_token %}
+
+    <div class="form-group">
+        <label for="dni">DNI del Alumno:</label>
+        <input type="text" name="dni" id="dni" required placeholder="Ingrese el DNI sin puntos">
+    </div>
+
+
+
+    <button type="submit" class="btn">Generar PDF</button>
+</form>
+
+<style>
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+    }
+
+    input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .alert.error {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}

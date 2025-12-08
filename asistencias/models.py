@@ -124,6 +124,7 @@ class Diplomatura(models.Model):
     coordinadores = models.ManyToManyField(
         User, blank=True, related_name='diplos_coordinadas'
     )
+    municipio = models.CharField(max_length=100, default='CORONEL ROSALES')
 
     def __str__(self):
         return f"{self.nombre} ({self.codigo})"

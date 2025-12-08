@@ -28,6 +28,7 @@ urlpatterns = [
     # Coordinador / nivel 3
     path('diplomaturas/crear/', views.crear_diplomatura, name='crear_diplomatura'),
     path('diplomaturas/<int:diplo_id>/cargar-excel/', views.cargar_excel_inscripciones, name='cargar_excel'),
+    path('diplomaturas/constancia-alumno-regular/', views.generar_constancia, name='generar_constancia'),
 
     # Reportes
     path('reportes/exportar/', views.exportar_reportes, name='exportar_reportes'),

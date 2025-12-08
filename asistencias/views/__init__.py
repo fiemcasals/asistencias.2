@@ -8,6 +8,7 @@ from .tokens import usar_token
 from .docente import crear_materia, crear_clase, listado_presentes, generar_token_adjunto
 from .coordinador import crear_diplomatura, cargar_excel_inscripciones
 from .reportes import exportar_reportes
+from .reportes_constancia import generar_constancia
 from .publico import publico, consulta_publica
 from .exportar import exportar_xlsx, exportar_asistencia_materia
 
@@ -21,7 +22,7 @@ __all__ = [
     # docente
     "crear_materia", "crear_clase", "listado_presentes", "generar_token_adjunto",
     # coordinador
-    "crear_diplomatura", "cargar_excel_inscripciones",
+    "crear_diplomatura", "cargar_excel_inscripciones", "generar_constancia",
     # reportes
     "exportar_reportes",
     # público
