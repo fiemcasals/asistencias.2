@@ -49,7 +49,10 @@ def generar_constancia(request):
 
         # Verificar si el coordinador tiene acceso a esta diplomatura (si no es admin)
         if request.user.nivel != 5:
-            if not diplomatura.coordinadores.filter(id=request.user.id).exists():
+            es_coordinador = diplomatura.coordinadores.filter(id=request.user.id).exists()
+            es_creador = diplomatura.creada_por_id == request.user.id
+            
+            if not (es_coordinador or es_creador):
                  return render(request, 'asistencias/generar_constancia.html', {'error': 'No tienes permisos sobre la diplomatura de este alumno.'})
 
         # Generar PDF

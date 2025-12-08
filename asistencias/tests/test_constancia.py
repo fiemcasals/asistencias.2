@@ -69,3 +69,17 @@ class GenerarConstanciaTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'application/pdf')
         self.assertIn('attachment; filename="constancia_87654321.pdf"', response['Content-Disposition'])
+
+    def test_acceso_permitido_creador(self):
+        # El admin creó la diplo, debería tener acceso aunque no esté en coordinadores (si fuera nivel 3)
+        # Pero admin es nivel 5 y pasa siempre.
+        # Creemos un coordinador que sea creador pero no esté en la lista M2M
+        creador = User.objects.create_user(email='creador@test.com', password='password', first_name='Creador', last_name='User', dni='3', nivel=3)
+        self.diplomatura.creada_por = creador
+        self.diplomatura.save()
+        
+        self.client.force_login(creador)
+        response = self.client.post(self.url, {'dni': '12345678'})
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
