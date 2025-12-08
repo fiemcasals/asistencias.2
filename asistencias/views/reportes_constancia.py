@@ -136,10 +136,10 @@ def generar_constancia(request):
         fecha_actual = timezone.now()
         fecha_str = fecha_actual.strftime("%d de %B de %Y")
         
-        # Texto modificado: Se quita "dictada en el Municipio de: ..."
+        # Texto modificado: Se quita "Diplomatura en:" para no repetir
         texto = f"""
         Se deja constancia que el Señor/a <b>{alumno.first_name} {alumno.last_name}</b>, DNI <b>{alumno.dni}</b>,
-        es alumno regular de la Diplomatura en: <b>{diplomatura.nombre}</b> dependiente de
+        es alumno regular de la: <b>{diplomatura.nombre}</b> dependiente de
         Universidad Tecnológica Nacional, a través del Plan de Integración Territorial
         de la Provincia de Buenos Aires (PROGRAMA PUENTES).
         """
@@ -162,10 +162,8 @@ def generar_constancia(request):
         # Firma
         firma_path = os.path.join(settings.BASE_DIR, 'static', 'core', 'img', 'firma_lucia.png')
         if os.path.exists(firma_path):
-            # Ajustar tamaño: 5cm ancho, aspect ratio se mantiene si reportlab lo permite, 
-            # pero Image requiere w y h.
-            # Asumimos que la imagen tiene buen ratio.
-            elements.append(Image(firma_path, width=6*cm, height=3*cm))
+            # Ajustar tamaño: duplicado a 10cm ancho x 5cm alto (aprox) para que se vea bien
+            elements.append(Image(firma_path, width=10*cm, height=5*cm))
         else:
             # Fallback si no está la imagen
             elements.append(Paragraph("___________________________", style_signature))
