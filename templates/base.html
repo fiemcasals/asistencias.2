@@ -25,6 +25,7 @@
 
           {% if request.user.nivel == 3 or request.user.nivel == 5 %}
           <a href="{% url 'asistencias:exportar_xlsx' %}">Exportar datos</a>
+          <a href="{% url 'asistencias:listar_diplomaturas' %}">Diplomaturas</a>
           <a href="{% url 'asistencias:generar_constancia' %}">Constancia Alumno</a>
           {% endif %}
           {% else %}
