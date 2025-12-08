@@ -162,12 +162,16 @@ def generar_constancia(request):
         # Firma
         firma_path = os.path.join(settings.BASE_DIR, 'static', 'core', 'img', 'firma_lucia.png')
         if os.path.exists(firma_path):
-            elements.append(Image(firma_path, width=4*cm, height=2*cm))
-        
-        elements.append(Paragraph("___________________________", style_signature))
-        elements.append(Paragraph("Prof. Lucia Yacoy", style_signature))
-        elements.append(Paragraph("Dir. Unidad de Gestión del Plan de Integración Territorial de la", style_signature))
-        elements.append(Paragraph("Universidad Tecnológica Nacional", style_signature))
+            # Ajustar tamaño: 5cm ancho, aspect ratio se mantiene si reportlab lo permite, 
+            # pero Image requiere w y h.
+            # Asumimos que la imagen tiene buen ratio.
+            elements.append(Image(firma_path, width=6*cm, height=3*cm))
+        else:
+            # Fallback si no está la imagen
+            elements.append(Paragraph("___________________________", style_signature))
+            elements.append(Paragraph("Prof. Lucia Yacoy", style_signature))
+            elements.append(Paragraph("Dir. Unidad de Gestión del Plan de Integración Territorial de la", style_signature))
+            elements.append(Paragraph("Universidad Tecnológica Nacional", style_signature))
 
         doc.build(elements)
         
