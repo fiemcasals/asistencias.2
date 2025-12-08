@@ -104,6 +104,21 @@ def generar_constancia(request):
             fontName='Times-Italic'
         )
 
+        # Header (Logos)
+        # Intentar cargar logos si existen
+        # Se asume que están en static/core/img/
+        import os
+        from django.conf import settings
+        
+        logo_path = os.path.join(settings.BASE_DIR, 'static', 'core', 'img', 'header_logos.png')
+        if os.path.exists(logo_path):
+            # Ajustar tamaño según necesidad, ej: 16cm ancho
+            elements.append(Image(logo_path, width=16*cm, height=2.5*cm))
+        else:
+            elements.append(Spacer(1, 2.5*cm)) # Espacio si no hay logo
+
+        elements.append(Spacer(1, 1*cm))
+
         # Título
         elements.append(Paragraph("CONSTANCIA DE ALUMNO REGULAR", style_title))
         elements.append(Spacer(1, 1*cm))
@@ -121,12 +136,12 @@ def generar_constancia(request):
         fecha_actual = timezone.now()
         fecha_str = fecha_actual.strftime("%d de %B de %Y")
         
+        # Texto modificado: Se quita "dictada en el Municipio de: ..."
         texto = f"""
         Se deja constancia que el Señor/a <b>{alumno.first_name} {alumno.last_name}</b>, DNI <b>{alumno.dni}</b>,
         es alumno regular de la Diplomatura en: <b>{diplomatura.nombre}</b> dependiente de
         Universidad Tecnológica Nacional, a través del Plan de Integración Territorial
-        de la Provincia de Buenos Aires (PROGRAMA PUENTES) dictada en el
-        Municipio de: <b>{diplomatura.municipio}</b>.
+        de la Provincia de Buenos Aires (PROGRAMA PUENTES).
         """
         elements.append(Paragraph(texto, style_body))
 
@@ -139,12 +154,16 @@ def generar_constancia(request):
         
         elements.append(Spacer(1, 1*cm))
 
-        # Fecha
-        elements.append(Paragraph(f"{diplomatura.municipio}, {fecha_str}", style_date))
+        # Fecha (Solo fecha, sin lugar fijo para no errar)
+        elements.append(Paragraph(f"{fecha_str}", style_date))
 
         elements.append(Spacer(1, 2*cm))
 
         # Firma
+        firma_path = os.path.join(settings.BASE_DIR, 'static', 'core', 'img', 'firma_lucia.png')
+        if os.path.exists(firma_path):
+            elements.append(Image(firma_path, width=4*cm, height=2*cm))
+        
         elements.append(Paragraph("___________________________", style_signature))
         elements.append(Paragraph("Prof. Lucia Yacoy", style_signature))
         elements.append(Paragraph("Dir. Unidad de Gestión del Plan de Integración Territorial de la", style_signature))
