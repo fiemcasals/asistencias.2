@@ -22,8 +22,6 @@
           <a href="{% url 'asistencias:publico' %}">Dar Presente</a>
           <a href="{% url 'asistencias:consulta_publica' %}">Consultar</a>
           <a href="{% url 'asistencias:insc_materia_codigo' %}">Inscribirse a materia</a>
-          <a href="{% url 'asistencias:insc_materia_codigo' %}">Inscribirse a materia</a>
-          <a href="{% url 'asistencias:listar_materias' %}">Materias</a>
           <a href="{% url 'asistencias:mis_notas' %}">Mis Notas</a>
 
           {% if request.user.nivel == 3 or request.user.nivel == 5 %}
