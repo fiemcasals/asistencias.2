@@ -83,9 +83,16 @@ def home(request):
                 'can_edit': es_profe_de_esta
             })
 
+    # Mostrar calendario general solo si es nivel >= 3 (coordinador) o tiene más de 1 diplomatura
+    mostrar_calendario_general = False
+    if request.user.is_authenticated:
+        if request.user.nivel >= 3 or diplomaturas.count() > 1:
+            mostrar_calendario_general = True
+
     return render(request, 'asistencias/home.html', {
         'diplomaturas': diplomaturas,
-        'eventos': eventos
+        'eventos': eventos,
+        'mostrar_calendario_general': mostrar_calendario_general,
     })
 
 
