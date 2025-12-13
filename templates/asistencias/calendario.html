@@ -19,6 +19,13 @@
         var calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
             locale: 'es',
+            selectable: true,
+            dateClick: function (info) {
+                // Solo si hay materias creables (es profe)
+                {% if materias_creables %}
+                openModal(info.dateStr);
+                {% endif %}
+            },
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
@@ -54,6 +61,28 @@
     calendar.render();
   });
 
+    var selectedDate = null;
+    var modal = document.getElementById("modal-materia"); // Modal de crear clase
+    var span = document.getElementsByClassName("close")[0];
+
+    function openModal(dateStr) {
+        selectedDate = dateStr;
+        document.getElementById("modal-fecha-display").innerText = dateStr;
+        modal.style.display = "block";
+    }
+
+    if (span) {
+        span.onclick = function () {
+            modal.style.display = "none";
+        }
+    }
+
+    function crearClase(materiaId) {
+        // Redirigir a crear clase con la fecha
+        var url = "{% url 'asistencias:crear_clase' 0 %}".replace('0', materiaId);
+        window.location.href = url + "?fecha=" + selectedDate;
+    }
+
     function openModalDetalle(event) {
         document.getElementById("detalle-titulo").innerText = event.title;
         document.getElementById("detalle-horario").innerText = event.extendedProps.hora_inicio + " - " + event.extendedProps.hora_fin;
@@ -75,22 +104,48 @@
 
     // Close modal logic
     document.addEventListener('DOMContentLoaded', function () {
-        var modal = document.getElementById("modal-detalle-clase");
-        var span = document.getElementsByClassName("close-detalle")[0];
+        // Logic for detail modal close
+        var modalDetalle = document.getElementById("modal-detalle-clase");
+        var spanDetalle = document.getElementsByClassName("close-detalle")[0];
 
-        if (span) {
-            span.onclick = function () {
-                modal.style.display = "none";
+        if (spanDetalle) {
+            spanDetalle.onclick = function () {
+                modalDetalle.style.display = "none";
             }
         }
 
+        // Logic for create modal close (if clicked outside)
+        var modalCreate = document.getElementById("modal-materia");
+
         window.onclick = function (event) {
-            if (event.target == modal) {
-                modal.style.display = "none";
+            if (event.target == modalDetalle) {
+                modalDetalle.style.display = "none";
+            }
+            if (event.target == modalCreate) {
+                modalCreate.style.display = "none";
             }
         }
     });
 </script>
+
+<!-- Modal para elegir materia al crear clase desde calendario -->
+<div id="modal-materia" class="modal"
+    style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content"
+        style="background-color: #1e1e1e; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 400px; border-radius: 8px;">
+        <span class="close"
+            style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+        <h3>Crear Clase</h3>
+        <p>Seleccioná la materia para el día <span id="modal-fecha-display"></span>:</p>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for m in materias_creables %}
+            <button class="btn secondary" onclick="crearClase('{{ m.id }}')">{{ m.nombre }}</button>
+            {% empty %}
+            <p>No tenés materias asignadas para crear clases.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
 
 <!-- Modal Detalle de Clase (para alumnos) -->
 <div id="modal-detalle-clase" class="modal"

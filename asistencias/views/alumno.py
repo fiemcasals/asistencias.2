@@ -262,9 +262,21 @@ def calendario_diplomatura(request, diplomatura_id):
             'hora_fin': c.hora_fin.strftime('%H:%M'),
         })
 
+        })
+
+    # Materias donde el usuario puede crear clases (para el modal del calendario)
+    materias_creables = []
+    if request.user.is_authenticated and (request.user.nivel >= 2):
+        # Titular o profesor adjunto
+        materias_creables = Materia.objects.filter(
+            models.Q(profesor_titular=request.user) |
+            models.Q(profesores__user=request.user)
+        ).distinct()
+
     return render(request, 'asistencias/calendario.html', {
         'diplomatura': diplomatura,
-        'eventos': eventos
+        'eventos': eventos,
+        'materias_creables': materias_creables,
     })
 
 
