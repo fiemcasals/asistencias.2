@@ -80,7 +80,21 @@ def crear_clase(request, materia_id):
             return redirect('asistencias:ver_clases', materia_id=materia.id)
     else:
         # Form inicial con materia pre-seleccionada
-        form = ClaseForm(initial={'materia': materia})
+        initial_data = {'materia': materia}
+        
+        # Si viene fecha por GET (del calendario)
+        fecha_param = request.GET.get('fecha')
+        if fecha_param:
+            try:
+                # Asumimos formato YYYY-MM-DD
+                fecha_dt = timezone.datetime.strptime(fecha_param, '%Y-%m-%d')
+                # Setear hora default, ej: 09:00 a 11:00 del día seleccionado
+                initial_data['hora_inicio'] = fecha_dt.replace(hour=9, minute=0)
+                initial_data['hora_fin'] = fecha_dt.replace(hour=11, minute=0)
+            except ValueError:
+                pass
+
+        form = ClaseForm(initial=initial_data)
 
     return render(request, 'asistencias/crear_clase.html', {'materia': materia, 'form': form})
 

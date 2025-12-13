@@ -89,10 +89,20 @@ def home(request):
         if request.user.nivel >= 3 or diplomaturas.count() > 1:
             mostrar_calendario_general = True
 
+    # Materias donde el usuario puede crear clases (para el modal del calendario)
+    materias_creables = []
+    if request.user.is_authenticated and (request.user.nivel >= 2):
+        # Titular o profesor adjunto
+        materias_creables = Materia.objects.filter(
+            models.Q(profesor_titular=request.user) |
+            models.Q(profesores__user=request.user)
+        ).distinct()
+
     return render(request, 'asistencias/home.html', {
         'diplomaturas': diplomaturas,
         'eventos': eventos,
         'mostrar_calendario_general': mostrar_calendario_general,
+        'materias_creables': materias_creables,
     })
 
 
