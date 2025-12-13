@@ -16,6 +16,12 @@
   {% if materia.profesor_titular_id == request.user.id or es_docente or es_coord %}
   <a class="btn" href="{% url 'asistencias:exportar_asistencia_materia' materia.id %}">Exportar Asistencia</a>
   {% endif %}
+
+  {% if request.user.nivel == 1 %}
+  <div class="actions">
+    <a class="btn" href="{% url 'asistencias:mis_notas' %}">Mis Notas</a>
+  </div>
+  {% endif %}
 </div>
 {% endif %}
 

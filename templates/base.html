@@ -12,17 +12,17 @@
 <body>
   <header class="topbar">
     <div class="container">
-      <a class="brand" href="{% url 'asistencias:home' %}">Asistencias</a>
+      <!-- <a class="brand" href="{% url 'asistencias:home' %}">Asistencias</a> -->
 
       <nav class="navbar">
         <div class="nav-left">
           <a href="{% url 'asistencias:home' %}">Inicio</a>
 
           {% if request.user.is_authenticated %}
-          <a href="{% url 'asistencias:publico' %}">Dar Presente</a>
+          <!-- <a href="{% url 'asistencias:publico' %}">Dar Presente</a> -->
           <a href="{% url 'asistencias:consulta_publica' %}">Consultar</a>
           <a href="{% url 'asistencias:insc_materia_codigo' %}">Inscribirse a materia</a>
-          <a href="{% url 'asistencias:mis_notas' %}">Mis Notas</a>
+          <a href="{% url 'asistencias:insc_materia_codigo' %}">Inscribirse a materia</a>
 
           {% if request.user.nivel == 3 or request.user.nivel == 5 %}
           <a href="{% url 'asistencias:exportar_xlsx' %}">Exportar datos</a>
