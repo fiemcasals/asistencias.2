@@ -73,6 +73,8 @@
   <div class="card">
     <h3>{{ d.nombre }}</h3>
     <p class="muted">Código: {{ d.codigo }}</p>
+    <p><a class="btn secondary small" href="{% url 'asistencias:calendario_diplomatura' d.id %}">📅 Ver Calendario</a>
+    </p>
 
     <ul>
       {% for m in d.materias.all %}

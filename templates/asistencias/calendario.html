@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Calendario · {{ diplomatura.nombre }}{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1>Calendario · {{ diplomatura.nombre }}</h1>
+    <a class="btn secondary" href="{% url 'asistencias:home' %}">Volver</a>
+</div>
+
+<div class="card">
+    <div id="calendar"></div>
+</div>
+
+<!-- FullCalendar -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'es',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: [
+                {% for e in eventos %}
+        {
+                title: "{{ e.title }}",
+                start: "{{ e.start }}",
+                url: "{% if e.can_edit %}{% url 'asistencias:editar_clase' e.id %}{% else %}#{% endif %}",
+                color: "{{ e.color }}",
+                extendedProps: {
+                    materia_id: "{{ e.materia_id }}",
+                    can_edit: {% if e.can_edit %}true{% else %}false{% endif %}
+          }
+        },
+        {% endfor %}
+      ],
+        eventClick: function (info) {
+            if (info.event.extendedProps.can_edit) {
+                // Allow default behavior
+            } else {
+                info.jsEvent.preventDefault();
+            }
+        }
+    });
+    calendar.render();
+  });
+</script>
+<style>
+    #calendar {
+        max-width: 100%;
+        margin: 0 auto;
+        font-family: var(--font-family);
+    }
+
+    .fc-event {
+        cursor: pointer;
+    }
+</style>
+{% endblock %}

@@ -188,6 +188,61 @@ def ver_clases_materia(request, materia_id):
     })
 
 
+@requiere_nivel(1)
+def calendario_diplomatura(request, diplomatura_id):
+    diplomatura = get_object_or_404(Diplomatura, id=diplomatura_id)
+    
+    # Verificar acceso (alumno inscrito, docente, o coordinador)
+    # Reutilizamos lógica de home pero filtrando por esta diplo
+    
+    eventos = []
+    
+    # Materias de esta diplo
+    materias = Materia.objects.filter(diplomatura=diplomatura)
+    
+    # Filtrar solo las que el usuario tiene acceso si es alumno?
+    # Generalmente el calendario de la diplo muestra todo el cronograma, 
+    # pero para evitar confusión, mostremos solo donde está inscrito o es profe, 
+    # O mostremos TODO el cronograma de la diplo?
+    # "Calendario por diplo" suena a cronograma completo.
+    # Pero mantengamos la coherencia: solo lo que cursa/da clases.
+    
+    # IDs de materias donde participa
+    mats_ids = Materia.objects.filter(
+        diplomatura=diplomatura
+    ).filter(
+        models.Q(inscripciones__user=request.user) |
+        models.Q(profesores__user=request.user) |
+        models.Q(profesor_titular=request.user)
+    ).values_list('id', flat=True)
+
+    # Si es coordinador, ve todo
+    if request.user.nivel >= 3:
+        mats_ids = Materia.objects.filter(diplomatura=diplomatura).values_list('id', flat=True)
+
+    clases = Clase.objects.filter(materia_id__in=mats_ids).select_related('materia')
+    
+    # Permisos de edición
+    materias_profe = set(ProfesorMateria.objects.filter(user=request.user).values_list('materia_id', flat=True))
+    materias_profe.update(Materia.objects.filter(profesor_titular=request.user).values_list('id', flat=True))
+
+    for c in clases:
+        es_profe_de_esta = c.materia_id in materias_profe
+        eventos.append({
+            'title': f"{c.materia.nombre} ({c.hora_inicio.strftime('%H:%M')})",
+            'start': c.fecha.isoformat(),
+            'id': c.id,
+            'materia_id': c.materia.id,
+            'color': '#4CAF50' if c.ventana_activa() else '#888',
+            'can_edit': es_profe_de_esta
+        })
+
+    return render(request, 'asistencias/calendario.html', {
+        'diplomatura': diplomatura,
+        'eventos': eventos
+    })
+
+
 
 
 @requiere_nivel(1)

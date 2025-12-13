@@ -2,7 +2,7 @@
 from .alumno import (
     home, perfil, listar_diplomaturas, listar_materias,
     insc_diplomatura_por_codigo, insc_materia_por_codigo,
-    ver_clases_materia, marcar_presente, desinscribirse_materia, 
+    ver_clases_materia, marcar_presente, desinscribirse_materia, calendario_diplomatura,
 )
 from .tokens import usar_token
 from .docente import crear_materia, crear_clase, listado_presentes, generar_token_adjunto, editar_clase, eliminar_clase

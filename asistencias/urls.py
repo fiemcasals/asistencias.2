@@ -10,6 +10,7 @@ urlpatterns = [
     # Alumno / nivel 1
     path('perfil/', views.perfil, name='perfil'),
     path('diplomaturas/', views.listar_diplomaturas, name='listar_diplomaturas'),
+    path('diplomaturas/<int:diplomatura_id>/calendario/', views.calendario_diplomatura, name='calendario_diplomatura'),
     path('materias/', views.listar_materias, name='listar_materias'),
     path('inscribirse/diplomatura/', views.insc_diplomatura_por_codigo, name='insc_diplomatura_codigo'),
     path('inscribirse/materia/', views.insc_materia_por_codigo, name='insc_materia_codigo'),
