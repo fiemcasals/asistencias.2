@@ -28,6 +28,11 @@
 {% for c in clases %}
 <div class="card">
   <h3>{{ c.fecha }} — {{ c.hora_inicio }}–{{ c.hora_fin }}</h3>
+  {% if c.link_clase %}
+  <p style="margin-top: 5px; font-size: 0.9em;">
+    🔗 <a href="{{ c.link_clase }}" target="_blank" rel="noopener noreferrer">{{ c.link_clase|truncatechars:50 }}</a>
+  </p>
+  {% endif %}
   {% if c.ventana_activa %}
   <a class="btn" href="{% url 'asistencias:marcar_presente' c.id %}">Dar presente</a>
   {% else %}

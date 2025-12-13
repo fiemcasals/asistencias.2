@@ -17,7 +17,7 @@ class CrearMateriaForm(forms.ModelForm):
 
     class Meta:
         model = Materia
-        fields = ["diplomatura", "nombre", "descripcion", "codigo"]
+        fields = ["diplomatura", "nombre", "descripcion", "codigo", "link_clase"]
 
 class DiplomaturaForm(forms.ModelForm):
     class Meta:
@@ -27,7 +27,7 @@ class DiplomaturaForm(forms.ModelForm):
 class MateriaForm(forms.ModelForm):
     class Meta:
         model = Materia
-        fields = ['diplomatura', 'nombre', 'descripcion']
+        fields = ['diplomatura', 'nombre', 'descripcion', "link_clase"]
 
 class ClaseForm(forms.ModelForm):
     class Meta:
@@ -46,7 +46,7 @@ class ClaseForm(forms.ModelForm):
 
     class Meta:
         model = Clase
-        fields = ['materia', 'hora_inicio', 'hora_fin', 'tema']
+        fields = ['materia', 'hora_inicio', 'hora_fin', 'tema', 'link_clase']
         widgets = {
             'hora_inicio': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'hora_fin': forms.DateTimeInput(attrs={'type': 'datetime-local'}),

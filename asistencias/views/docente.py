@@ -44,6 +44,7 @@ def crear_clase(request, materia_id):
             hi = form.cleaned_data['hora_inicio']
             hf = form.cleaned_data['hora_fin']
             tema = form.cleaned_data['tema']
+            link_clase = form.cleaned_data.get('link_clase', '')
             
             # Recurrencia
             cada_dias = form.cleaned_data.get('repetir_cada')
@@ -55,7 +56,8 @@ def crear_clase(request, materia_id):
                 fecha=hi.date(),
                 hora_inicio=hi,
                 hora_fin=hf,
-                tema=tema
+                tema=tema,
+                link_clase=link_clase
             )
             count = 1
 
@@ -70,7 +72,8 @@ def crear_clase(request, materia_id):
                         fecha=current_hi.date(),
                         hora_inicio=current_hi,
                         hora_fin=current_hf,
-                        tema=tema
+                        tema=tema,
+                        link_clase=link_clase
                     )
                     current_hi += timedelta(days=cada_dias)
                     current_hf += timedelta(days=cada_dias)
@@ -80,7 +83,10 @@ def crear_clase(request, materia_id):
             return redirect('asistencias:ver_clases', materia_id=materia.id)
     else:
         # Form inicial con materia pre-seleccionada
-        initial_data = {'materia': materia}
+        initial_data = {
+            'materia': materia,
+            'link_clase': materia.link_clase  # Pre-llenar con el default de la materia
+        }
         
         # Si viene fecha por GET (del calendario)
         fecha_param = request.GET.get('fecha')

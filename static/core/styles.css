@@ -44,7 +44,7 @@ h1,h2,h3{color:#fff}
 .footer{color:var(--muted);padding:24px 0;text-align:center;margin-top:40px;border-top:1px solid #1f2937}
 input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #1f2937;background:#0b1220;color:var(--text)}
 label{display:block;margin:6px 0 4px;color:#fff}
-.actions{display:flex;gap:8px;margin:12px 0}
+.actions{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
 video{max-width:300px;width:80%;height:auto;display:block;margin:auto}
 
 /* ===== Navbar ===== */

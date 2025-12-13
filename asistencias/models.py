@@ -137,6 +137,7 @@ class Materia(models.Model):
     descripcion = models.TextField(blank=True)
     codigo = models.CharField(max_length=20, unique=True)  # para inscripción
     profesor_titular = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='materias_titular')
+    link_clase = models.TextField(blank=True, help_text="Link o detalle por defecto para las clases")
 
     class Meta:
         unique_together = ('diplomatura', 'nombre')
@@ -152,6 +153,7 @@ class Clase(models.Model):
     hora_inicio = models.DateTimeField(help_text='Inicio de ventana para marcar presente')
     hora_fin = models.DateTimeField(help_text='Fin de ventana para marcar presente')
     tema = models.CharField(max_length=255, blank=True)
+    link_clase = models.TextField(blank=True, help_text="Link o detalle específico para esta clase")
 
     def ventana_activa(self):
         """Ventana activa si ahora está entre hora_inicio y hora_fin."""
