@@ -262,7 +262,7 @@ def calendario_diplomatura(request, diplomatura_id):
             'hora_fin': c.hora_fin.strftime('%H:%M'),
         })
 
-        })
+
 
     # Materias donde el usuario puede crear clases (para el modal del calendario)
     materias_creables = []
