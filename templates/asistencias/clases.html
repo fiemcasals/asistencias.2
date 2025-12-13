@@ -3,9 +3,9 @@
 {% block content %}
 <h1>{{ materia.diplomatura.nombre }} · {{ materia.nombre }}</h1>
 
-{% if request.user.nivel|default:1 >= 2 %}
+{% if request.user.nivel|default:1 >= 2 or materia.profesor_titular_id == request.user.id or es_docente or es_coord %}
 <div class="actions">
-  {% if materia.profesor_titular_id == request.user.id %}
+  {% if materia.profesor_titular_id == request.user.id or es_docente or es_coord %}
   <a class="btn" href="{% url 'asistencias:crear_clase' materia.id %}">+ Crear clase</a>
   <a class="btn" href="{% url 'asistencias:listado_presentes' materia.id %}">Ver presentes/ausentes</a>
   <a class="btn" href="{% url 'asistencias:token_adjunto' materia.id %}">Generar token adjunto</a>
