@@ -21,8 +21,8 @@
             locale: 'es',
             selectable: true,
             dateClick: function (info) {
-                // Solo si hay materias creables (es profe)
-                {% if materias_creables %}
+                // Solo si es docente o superior (nivel >= 2)
+                {% if request.user.nivel >= 2 %}
                 openModal(info.dateStr);
                 {% endif %}
             },
