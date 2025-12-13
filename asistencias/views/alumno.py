@@ -80,7 +80,11 @@ def home(request):
                 'id': c.id,
                 'materia_id': c.materia.id,
                 'color': '#4CAF50' if c.ventana_activa() else '#888',
-                'can_edit': es_profe_de_esta
+                'can_edit': es_profe_de_esta,
+                'link_clase': c.link_clase,
+                'tema': c.tema,
+                'hora_inicio': c.hora_inicio.strftime('%H:%M'),
+                'hora_fin': c.hora_fin.strftime('%H:%M'),
             })
 
     # Mostrar calendario general solo si es nivel >= 3 (coordinador) o tiene más de 1 diplomatura
@@ -251,7 +255,11 @@ def calendario_diplomatura(request, diplomatura_id):
             'id': c.id,
             'materia_id': c.materia.id,
             'color': '#4CAF50' if c.ventana_activa() else '#888',
-            'can_edit': es_profe_de_esta
+            'can_edit': es_profe_de_esta,
+            'link_clase': c.link_clase,
+            'tema': c.tema,
+            'hora_inicio': c.hora_inicio.strftime('%H:%M'),
+            'hora_fin': c.hora_fin.strftime('%H:%M'),
         })
 
     return render(request, 'asistencias/calendario.html', {

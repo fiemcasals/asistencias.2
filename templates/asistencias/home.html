@@ -59,7 +59,11 @@
         color: "{{ e.color }}",
         extendedProps: {
           materia_id: "{{ e.materia_id }}",
-          can_edit: {% if e.can_edit %}true{% else %}false{% endif %}
+          can_edit: {% if e.can_edit %}true{% else %}false{% endif %},
+    link_clase: "{{ e.link_clase|escapejs }}",
+    tema: "{{ e.tema|escapejs }}",
+    hora_inicio: "{{ e.hora_inicio }}",
+    hora_fin: "{{ e.hora_fin }}"
           }
         },
     {% endfor %}
@@ -69,6 +73,7 @@
         // Allow default behavior (navigate to URL)
       } else {
         info.jsEvent.preventDefault(); // Don't navigate if student
+        openModalDetalle(info.event);
       }
     },
     windowResize: function (view) {
@@ -139,7 +144,9 @@
 <script>
   var selectedDate = null;
   var modal = document.getElementById("modal-materia");
+  var modalDetalle = document.getElementById("modal-detalle-clase"); // Nuevo modal
   var span = document.getElementsByClassName("close")[0];
+  var spanDetalle = document.getElementsByClassName("close-detalle")[0]; // Nuevo span
 
   function openModal(dateStr) {
     selectedDate = dateStr;
@@ -147,13 +154,41 @@
     modal.style.display = "block";
   }
 
+  function openModalDetalle(event) {
+    document.getElementById("detalle-titulo").innerText = event.title;
+    document.getElementById("detalle-horario").innerText = event.extendedProps.hora_inicio + " - " + event.extendedProps.hora_fin;
+    document.getElementById("detalle-tema").innerText = event.extendedProps.tema || "Sin tema especificado";
+
+    var linkContainer = document.getElementById("detalle-link-container");
+    var linkElement = document.getElementById("detalle-link");
+
+    if (event.extendedProps.link_clase) {
+      linkElement.href = event.extendedProps.link_clase;
+      linkElement.innerText = event.extendedProps.link_clase;
+      linkContainer.style.display = "block";
+    } else {
+      linkContainer.style.display = "none";
+    }
+
+    modalDetalle.style.display = "block";
+  }
+
   span.onclick = function () {
     modal.style.display = "none";
+  }
+
+  if (spanDetalle) {
+    spanDetalle.onclick = function () {
+      modalDetalle.style.display = "none";
+    }
   }
 
   window.onclick = function (event) {
     if (event.target == modal) {
       modal.style.display = "none";
+    }
+    if (event.target == modalDetalle) {
+      modalDetalle.style.display = "none";
     }
   }
 
@@ -163,6 +198,23 @@
     window.location.href = url + "?fecha=" + selectedDate;
   }
 </script>
+
+<!-- Modal Detalle de Clase (para alumnos) -->
+<div id="modal-detalle-clase" class="modal"
+  style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+  <div class="modal-content"
+    style="background-color: #1e1e1e; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 8px;">
+    <span class="close-detalle"
+      style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+    <h3 id="detalle-titulo"></h3>
+    <p><strong>Horario:</strong> <span id="detalle-horario"></span></p>
+    <p><strong>Tema:</strong> <span id="detalle-tema"></span></p>
+    <p id="detalle-link-container" style="display:none;">
+      <strong>Link/Detalle:</strong> <br>
+      <a id="detalle-link" href="#" target="_blank" style="color: var(--accent2); word-break: break-all;"></a>
+    </p>
+  </div>
+</div>
 {% endif %}
 
 <h2>Diplomaturas</h2>
