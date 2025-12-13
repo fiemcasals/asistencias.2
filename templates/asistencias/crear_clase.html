@@ -5,24 +5,7 @@
 
 <form method="post" class="card">
   {% csrf_token %}
-
-  <p>
-    <label for="fecha">Fecha (referencia)</label>
-    <input type="date" id="fecha" name="fecha" required />
-    <small class="muted">Se usa como “fecha” de la clase (independiente del rango horario).</small>
-  </p>
-
-  <p>
-    <label for="hora_inicio">Inicio (fecha y hora)</label>
-    <input type="datetime-local" id="hora_inicio" name="hora_inicio" required step="60" />
-    <small class="muted">Ej: 2025-10-11 09:10</small>
-  </p>
-
-  <p>
-    <label for="hora_fin">Fin (fecha y hora)</label>
-    <input type="datetime-local" id="hora_fin" name="hora_fin" required step="60" />
-  </p>
-
+  {{ form.as_p }}
   <button class="btn" type="submit">Guardar</button>
 </form>
 {% endblock %}

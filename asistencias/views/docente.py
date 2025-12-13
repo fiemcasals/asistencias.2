@@ -1,9 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponseForbidden
+from django.utils import timezone
+from datetime import timedelta
 from asistencias.models import Diplomatura, Materia, Clase, InscripcionMateria, ProfesorMateria, Asistencia
 from asistencias.permissions import requiere_nivel
-from asistencias.forms import CrearMateriaForm
+from asistencias.permissions import requiere_nivel
+from asistencias.forms import CrearMateriaForm, ClaseForm
 from asistencias.models import ProfesorMateria
 from django.db.models import Prefetch
 
@@ -34,13 +37,89 @@ def crear_clase(request, materia_id):
     if not ProfesorMateria.objects.filter(user=request.user, materia=materia).exists():
         return HttpResponseForbidden("No sos profesor de esta materia.")
     if request.method == 'POST':
-        fecha = request.POST.get('fecha')       # YYYY-MM-DD
-        hi = request.POST.get('hora_inicio')    # HH:MM
-        hf = request.POST.get('hora_fin')       # HH:MM
-        Clase.objects.create(materia=materia, fecha=fecha, hora_inicio=hi, hora_fin=hf)
-        messages.success(request, "Clase creada.")
-        return redirect('asistencias:ver_clases', materia_id=materia.id)
-    return render(request, 'asistencias/crear_clase.html', {'materia': materia})
+        form = ClaseForm(request.POST)
+        if form.is_valid():
+            # Datos base
+            materia = form.cleaned_data['materia']
+            hi = form.cleaned_data['hora_inicio']
+            hf = form.cleaned_data['hora_fin']
+            tema = form.cleaned_data['tema']
+            
+            # Recurrencia
+            cada_dias = form.cleaned_data.get('repetir_cada')
+            hasta = form.cleaned_data.get('repetir_hasta')
+
+            # Primera clase
+            Clase.objects.create(
+                materia=materia,
+                fecha=hi.date(),
+                hora_inicio=hi,
+                hora_fin=hf,
+                tema=tema
+            )
+            count = 1
+
+            # Si hay recurrencia
+            if cada_dias and hasta:
+                current_hi = hi + timedelta(days=cada_dias)
+                current_hf = hf + timedelta(days=cada_dias)
+                
+                while current_hi.date() <= hasta:
+                    Clase.objects.create(
+                        materia=materia,
+                        fecha=current_hi.date(),
+                        hora_inicio=current_hi,
+                        hora_fin=current_hf,
+                        tema=tema
+                    )
+                    current_hi += timedelta(days=cada_dias)
+                    current_hf += timedelta(days=cada_dias)
+                    count += 1
+
+            messages.success(request, f"Se crearon {count} clase(s).")
+            return redirect('asistencias:ver_clases', materia_id=materia.id)
+    else:
+        # Form inicial con materia pre-seleccionada
+        form = ClaseForm(initial={'materia': materia})
+
+    return render(request, 'asistencias/crear_clase.html', {'materia': materia, 'form': form})
+
+
+@requiere_nivel(2)
+def editar_clase(request, clase_id):
+    clase = get_object_or_404(Clase, id=clase_id)
+    materia = clase.materia
+    
+    # Permisos (mismo check que crear_clase)
+    if not (ProfesorMateria.objects.filter(user=request.user, materia=materia).exists() or materia.profesor_titular == request.user):
+        return HttpResponseForbidden("No tenés permiso para editar esta clase.")
+
+    if request.method == 'POST':
+        form = ClaseForm(request.POST, instance=clase)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Clase actualizada.")
+            return redirect('asistencias:home') # O volver al calendario
+    else:
+        form = ClaseForm(instance=clase)
+
+    return render(request, 'asistencias/editar_clase.html', {'form': form, 'clase': clase})
+
+
+@requiere_nivel(2)
+def eliminar_clase(request, clase_id):
+    clase = get_object_or_404(Clase, id=clase_id)
+    materia = clase.materia
+    
+    if not (ProfesorMateria.objects.filter(user=request.user, materia=materia).exists() or materia.profesor_titular == request.user):
+        return HttpResponseForbidden("No tenés permiso para eliminar esta clase.")
+
+    if request.method == 'POST':
+        clase.delete()
+        messages.success(request, "Clase eliminada.")
+        return redirect('asistencias:home')
+
+    return render(request, 'asistencias/eliminar_clase.html', {'clase': clase})
 
 
 

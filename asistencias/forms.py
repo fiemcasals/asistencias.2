@@ -32,7 +32,25 @@ class MateriaForm(forms.ModelForm):
 class ClaseForm(forms.ModelForm):
     class Meta:
         model = Clase
-        fields = ['materia', 'fecha', 'hora_inicio', 'hora_fin', 'tema']
+    repetir_cada = forms.IntegerField(
+        required=False, 
+        min_value=1, 
+        label="Repetir cada (días)",
+        help_text="Dejar vacío si es clase única"
+    )
+    repetir_hasta = forms.DateField(
+        required=False, 
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label="Repetir hasta"
+    )
+
+    class Meta:
+        model = Clase
+        fields = ['materia', 'hora_inicio', 'hora_fin', 'tema']
+        widgets = {
+            'hora_inicio': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'hora_fin': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
 
 class MarcarPresenteForm(forms.Form):
     dni = forms.CharField(label="DNI", max_length=20)

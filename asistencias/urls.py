@@ -23,6 +23,8 @@ urlpatterns = [
     path('materias/crear/', views.crear_materia, name='crear_materia'),
     path('materias/<int:materia_id>/crear-clase/', views.crear_clase, name='crear_clase'),
     path('materias/<int:materia_id>/presentes/', views.listado_presentes, name='listado_presentes'),
+    path('clases/<int:clase_id>/editar/', views.editar_clase, name='editar_clase'),
+    path('clases/<int:clase_id>/eliminar/', views.eliminar_clase, name='eliminar_clase'),
     path('materias/<int:materia_id>/generar-token-adjunto/', views.generar_token_adjunto, name='token_adjunto'),
 
     # Coordinador / nivel 3

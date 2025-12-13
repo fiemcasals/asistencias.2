@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Editar clase{% endblock %}
+{% block content %}
+<h1>Editar clase · {{ clase.materia.nombre }}</h1>
+
+<form method="post" class="card">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="actions">
+        <button class="btn" type="submit">Guardar cambios</button>
+        <a class="btn secondary" href="{% url 'asistencias:home' %}">Cancelar</a>
+    </div>
+</form>
+{% endblock %}
