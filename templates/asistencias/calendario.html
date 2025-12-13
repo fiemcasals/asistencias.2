@@ -60,9 +60,6 @@
     });
     calendar.render();
   });
-
-    calendar.render();
-  });
 </script>
 
 <!-- Modal para elegir materia al crear clase desde calendario -->
@@ -100,6 +97,74 @@
         </p>
     </div>
 </div>
+
+<script>
+    var selectedDate = null;
+    var modal = document.getElementById("modal-materia"); // Modal de crear clase
+    var span = document.getElementsByClassName("close")[0];
+
+    function openModal(dateStr) {
+        selectedDate = dateStr;
+        document.getElementById("modal-fecha-display").innerText = dateStr;
+        modal.style.display = "block";
+    }
+
+    if (span) {
+        span.onclick = function () {
+            modal.style.display = "none";
+        }
+    }
+
+    function crearClase(materiaId) {
+        // Redirigir a crear clase con la fecha
+        var url = "{% url 'asistencias:crear_clase' 0 %}".replace('0', materiaId);
+        window.location.href = url + "?fecha=" + selectedDate;
+    }
+
+    function openModalDetalle(event) {
+        document.getElementById("detalle-titulo").innerText = event.title;
+        document.getElementById("detalle-horario").innerText = event.extendedProps.hora_inicio + " - " + event.extendedProps.hora_fin;
+        document.getElementById("detalle-tema").innerText = event.extendedProps.tema || "Sin tema especificado";
+
+        var linkContainer = document.getElementById("detalle-link-container");
+        var linkElement = document.getElementById("detalle-link");
+
+        if (event.extendedProps.link_clase) {
+            linkElement.href = event.extendedProps.link_clase;
+            linkElement.innerText = event.extendedProps.link_clase;
+            linkContainer.style.display = "block";
+        } else {
+            linkContainer.style.display = "none";
+        }
+
+        document.getElementById("modal-detalle-clase").style.display = "block";
+    }
+
+    // Close modal logic
+    document.addEventListener('DOMContentLoaded', function () {
+        // Logic for detail modal close
+        var modalDetalle = document.getElementById("modal-detalle-clase");
+        var spanDetalle = document.getElementsByClassName("close-detalle")[0];
+
+        if (spanDetalle) {
+            spanDetalle.onclick = function () {
+                modalDetalle.style.display = "none";
+            }
+        }
+
+        // Logic for create modal close (if clicked outside)
+        var modalCreate = document.getElementById("modal-materia");
+
+        window.onclick = function (event) {
+            if (event.target == modalDetalle) {
+                modalDetalle.style.display = "none";
+            }
+            if (event.target == modalCreate) {
+                modalCreate.style.display = "none";
+            }
+        }
+    });
+</script>
 <style>
     #calendar {
         max-width: 100%;
