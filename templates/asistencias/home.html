@@ -5,7 +5,10 @@
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
   <h1>Inicio</h1>
   {% if request.user.nivel >= 3 %}
-  <a class="btn" href="{% url 'asistencias:crear_materia' %}">+ Nueva Materia</a>
+  <div style="display: flex; gap: 10px;">
+    <a class="btn" href="{% url 'asistencias:crear_diplomatura' %}">+ Nueva Diplomatura</a>
+    <a class="btn" href="{% url 'asistencias:crear_materia' %}">+ Nueva Materia</a>
+  </div>
   {% endif %}
 </div>
 
