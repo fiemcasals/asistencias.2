@@ -42,6 +42,7 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=50, verbose_name="Apellido")
     second_last_name = models.CharField(max_length=50, blank=True, verbose_name="Segundo apellido")
     dni = models.CharField(max_length=20, unique=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Número de teléfono")
 
     NIVEL_CHOICES = [
         (1, 'Alumno'),
@@ -227,4 +228,20 @@ class PerfilForm(forms.ModelForm):
             "second_last_name",  # si existe en tu modelo
             "dni",
             "email",
+            "phone_number",
         ]
+
+
+class Nota(models.Model):
+    alumno = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notas')
+    materia = models.ForeignKey(Materia, on_delete=models.CASCADE, related_name='notas')
+    valor = models.DecimalField(max_digits=4, decimal_places=2)
+    fecha = models.DateField(default=timezone.now)
+    observaciones = models.TextField(blank=True)
+    evaluador = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='notas_asignadas')
+
+    class Meta:
+        ordering = ['-fecha']
+
+    def __str__(self):
+        return f"{self.alumno} - {self.materia}: {self.valor}"

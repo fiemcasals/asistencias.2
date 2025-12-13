@@ -2,7 +2,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from allauth.account.forms import SignupForm as AllauthSignupForm
-from .models import Diplomatura, Materia, Clase
+from .models import Diplomatura, Materia, Clase, Nota
 
 User = get_user_model()
 
@@ -40,7 +40,16 @@ class MarcarPresenteForm(forms.Form):
 class PerfilForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['first_name','second_name','last_name','second_last_name','dni','email']
+        fields = ['first_name','second_name','last_name','second_last_name','dni','email', 'phone_number']
+
+class NotaForm(forms.ModelForm):
+    class Meta:
+        model = Nota
+        fields = ['valor', 'observaciones']
+        widgets = {
+            'valor': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'max': '10'}),
+            'observaciones': forms.Textarea(attrs={'rows': 3}),
+        }
 
 class SignupForm(AllauthSignupForm):
     first_name = forms.CharField(label="Nombre", max_length=50)

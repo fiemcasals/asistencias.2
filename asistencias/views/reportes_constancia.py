@@ -148,7 +148,7 @@ def generar_constancia(request):
         texto2 = """
         Se extiende el presente certificado a solicitud del/la interesado/a, a solo efecto
         de ser presentado ante quien corresponda. La presente constancia tiene una
-        validez de 30 días una vez emitida la misma. ----------------------------------------
+        validez de 30 días una vez emitida la misma.
         """
         elements.append(Paragraph(texto2, style_body))
         

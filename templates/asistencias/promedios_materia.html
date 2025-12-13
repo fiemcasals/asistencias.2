@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Promedios - {{ materia.nombre }}</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Alumno</th>
+            <th>Promedio</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in promedios %}
+        <tr>
+            <td>{{ item.alumno__last_name }}, {{ item.alumno__first_name }}</td>
+            <td>{{ item.promedio }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'asistencias:home' %}" class="btn-secondary">Volver</a>
+{% endblock %}

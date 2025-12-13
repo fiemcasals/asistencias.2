@@ -44,4 +44,11 @@ urlpatterns = [
     path('exportar/xlsx/', views.exportar_xlsx, name='exportar_xlsx'),
     path('materias/<int:materia_id>/exportar-asistencia/', views.exportar_asistencia_materia, name='exportar_asistencia_materia'),
 
+    path('materias/<int:materia_id>/exportar-asistencia/', views.exportar_asistencia_materia, name='exportar_asistencia_materia'),
+
+    # Notas
+    path('materias/<int:materia_id>/notas/', views.cargar_notas, name='cargar_notas'),
+    path('mis-notas/', views.mis_notas, name='mis_notas'),
+    path('materias/<int:materia_id>/promedios/', views.promedios_materia, name='promedios_materia'),
+
 ]

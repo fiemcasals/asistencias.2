@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Mis Notas</h2>
+
+{% if notas %}
+<h3>Detalle de Notas</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Materia</th>
+            <th>Nota</th>
+            <th>Observaciones</th>
+            <th>Evaluador</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for nota in notas %}
+        <tr>
+            <td>{{ nota.fecha|date:"d/m/Y" }}</td>
+            <td>{{ nota.materia.nombre }}</td>
+            <td>{{ nota.valor }}</td>
+            <td>{{ nota.observaciones }}</td>
+            <td>{{ nota.evaluador.first_name }} {{ nota.evaluador.last_name }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3>Promedios por Materia</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Materia</th>
+            <th>Promedio</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in promedios %}
+        <tr>
+            <td>{{ item.materia__nombre }}</td>
+            <td>{{ item.promedio }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No tenés notas cargadas aún.</p>
+{% endif %}
+
+<a href="{% url 'asistencias:home' %}" class="btn-secondary">Volver</a>
+{% endblock %}

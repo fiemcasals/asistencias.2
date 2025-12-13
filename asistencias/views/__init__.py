@@ -11,6 +11,7 @@ from .reportes import exportar_reportes
 from .reportes_constancia import generar_constancia
 from .publico import publico, consulta_publica
 from .exportar import exportar_xlsx, exportar_asistencia_materia
+from .notas import cargar_notas, mis_notas, promedios_materia
 
 __all__ = [
     # alumno
@@ -29,4 +30,6 @@ __all__ = [
     "publico", "consulta_publica",
      # exportar
     "exportar_xlsx", "exportar_asistencia_materia",
+    # notas
+    "cargar_notas", "mis_notas", "promedios_materia",
 ]
