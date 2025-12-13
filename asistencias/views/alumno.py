@@ -140,11 +140,11 @@ def ver_clases_materia(request, materia_id):
             .filter(hora_inicio__lte=now, hora_fin__gte=now)
             .order_by('hora_inicio'))
 
-    return render(request, 'asistencias/clases.html', {
         'materia': materia, 
         'clases': clases,
         'es_docente': es_docente,
-        'es_coord': es_coord
+        'es_coord': es_coord,
+        'es_alumno': es_alumno,
     })
 
 
