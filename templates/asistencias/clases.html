@@ -3,17 +3,15 @@
 {% block content %}
 <h1>{{ materia.diplomatura.nombre }} · {{ materia.nombre }}</h1>
 
-{% if request.user.nivel|default:1 >= 2 or materia.profesor_titular_id == request.user.id or es_docente or es_coord %}
+{% if request.user.nivel|default:1 >= 2 or can_manage %}
 <div class="actions">
-  {% if materia.profesor_titular_id == request.user.id or es_docente or es_coord or request.user.nivel >= 2 and
-  es_alumno %}
+  {% if can_manage %}
   <a class="btn" href="{% url 'asistencias:crear_clase' materia.id %}">+ Crear clase</a>
   <a class="btn" href="{% url 'asistencias:listado_presentes' materia.id %}">Ver presentes/ausentes</a>
   <a class="btn" href="{% url 'asistencias:token_adjunto' materia.id %}">Generar token adjunto</a>
   {% endif %}
 
-  {% if materia.profesor_titular_id == request.user.id or es_docente or es_coord or request.user.nivel >= 2 and
-  es_alumno %}
+  {% if can_manage %}
   <a class="btn" href="{% url 'asistencias:cargar_notas' materia.id %}">Cargar Notas</a>
   <a class="btn" href="{% url 'asistencias:promedios_materia' materia.id %}">Promedios</a>
   <a class="btn" href="{% url 'asistencias:exportar_asistencia_materia' materia.id %}">Exportar Asistencia</a>

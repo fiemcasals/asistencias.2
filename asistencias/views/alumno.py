@@ -139,12 +139,20 @@ def ver_clases_materia(request, materia_id):
     clases = (materia.clases
             .filter(hora_inicio__lte=now, hora_fin__gte=now)
             .order_by('hora_inicio'))
+    can_manage = (
+        materia.profesor_titular_id == request.user.id or 
+        es_docente or 
+        es_coord or 
+        (getattr(request.user, 'nivel', 1) >= 2 and es_alumno)
+    )
 
+    return render(request, 'asistencias/clases.html', {
         'materia': materia, 
         'clases': clases,
         'es_docente': es_docente,
         'es_coord': es_coord,
         'es_alumno': es_alumno,
+        'can_manage': can_manage,
     })
 
 
