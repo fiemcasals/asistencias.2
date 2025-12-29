@@ -37,8 +37,8 @@
       locale: 'es',
       selectable: true,
       dateClick: function (info) {
-        // Solo si hay materias creables (es profe)
-        {% if materias_creables %}
+        // Solo si es Coordinador (nivel 3) y tiene materias
+        {% if request.user.nivel == 3 and materias_creables %}
         openModal(info.dateStr);
         {% endif %}
       },

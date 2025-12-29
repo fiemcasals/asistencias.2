@@ -1,215 +1,104 @@
+# FILE: asistencias/views/docente.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponseForbidden
 from django.utils import timezone
 from datetime import timedelta
-from asistencias.models import Diplomatura, Materia, Clase, InscripcionMateria, ProfesorMateria, Asistencia
-from asistencias.permissions import requiere_nivel
+from asistencias.models import Diplomatura, Materia, Clase, InscripcionMateria, ProfesorMateria, Asistencia, AccesoToken
 from asistencias.permissions import requiere_nivel
 from asistencias.forms import CrearMateriaForm, ClaseForm
-from asistencias.models import ProfesorMateria
-from django.db.models import Prefetch
-
-
-
-@requiere_nivel(2)
-def crear_materia(request):
-    if request.user.nivel == 6:
-        return HttpResponseForbidden("No tenés permisos para crear materias.")
-    if request.method == "POST":
-        form = CrearMateriaForm(request.POST)
-        if form.is_valid():
-            mat = form.save(commit=False)
-            mat.profesor_titular = request.user
-            mat.save()
-            ProfesorMateria.objects.get_or_create(
-                user=request.user, materia=mat, rol="titular"
-            )
-            messages.success(request, "Materia creada.")
-            return redirect("asistencias:listar_materias")
-    else:
-        form = CrearMateriaForm()
-    return render(request, "asistencias/crear_materia.html", {"form": form})
-
-
 
 @requiere_nivel(2)
 def crear_clase(request, materia_id):
+    # RESTRICCIÓN ESTRICTA: Solo Coordinadores (nivel 3+) pueden crear clases.
+    if request.user.nivel < 3:
+        return HttpResponseForbidden("Solo los coordinadores pueden crear o definir cronogramas de clases.")
+    
     materia = get_object_or_404(Materia, id=materia_id)
-    if not ProfesorMateria.objects.filter(user=request.user, materia=materia).exists():
-        return HttpResponseForbidden("No sos profesor de esta materia.")
     if request.method == 'POST':
         form = ClaseForm(request.POST)
         if form.is_valid():
-            # Datos base
-            materia = form.cleaned_data['materia']
             hi = form.cleaned_data['hora_inicio']
             hf = form.cleaned_data['hora_fin']
             tema = form.cleaned_data['tema']
-            link_clase = form.cleaned_data.get('link_clase', '')
-            
-            # Recurrencia
+            link = form.cleaned_data.get('link_clase', '')
             cada_dias = form.cleaned_data.get('repetir_cada')
             hasta = form.cleaned_data.get('repetir_hasta')
 
-            # Primera clase
-            Clase.objects.create(
-                materia=materia,
-                fecha=hi.date(),
-                hora_inicio=hi,
-                hora_fin=hf,
-                tema=tema,
-                link_clase=link_clase
+            clase_base = Clase.objects.create(
+                materia=materia, fecha=hi.date(), hora_inicio=hi, hora_fin=hf,
+                tema=tema, link_clase=link, creado_por=request.user
             )
             count = 1
-
-            # Si hay recurrencia
             if cada_dias and hasta:
-                current_hi = hi + timedelta(days=cada_dias)
-                current_hf = hf + timedelta(days=cada_dias)
-                
-                while current_hi.date() <= hasta:
+                curr_hi, curr_hf = hi + timedelta(days=cada_dias), hf + timedelta(days=cada_dias)
+                while curr_hi.date() <= hasta:
                     Clase.objects.create(
-                        materia=materia,
-                        fecha=current_hi.date(),
-                        hora_inicio=current_hi,
-                        hora_fin=current_hf,
-                        tema=tema,
-                        link_clase=link_clase
+                        materia=materia, fecha=curr_hi.date(), hora_inicio=curr_hi, 
+                        hora_fin=curr_hf, tema=tema, link_clase=link, creado_por=request.user
                     )
-                    current_hi += timedelta(days=cada_dias)
-                    current_hf += timedelta(days=cada_dias)
+                    curr_hi += timedelta(days=cada_dias)
+                    curr_hf += timedelta(days=cada_dias)
                     count += 1
-
             messages.success(request, f"Se crearon {count} clase(s).")
             return redirect('asistencias:ver_clases', materia_id=materia.id)
     else:
-        # Form inicial con materia pre-seleccionada
-        initial_data = {
-            'materia': materia,
-            'link_clase': materia.link_clase  # Pre-llenar con el default de la materia
-        }
-        
-        # Si viene fecha por GET (del calendario)
-        fecha_param = request.GET.get('fecha')
-        if fecha_param:
-            try:
-                # Asumimos formato YYYY-MM-DD
-                fecha_dt = timezone.datetime.strptime(fecha_param, '%Y-%m-%d')
-                # Setear hora default, ej: 09:00 a 11:00 del día seleccionado
-                initial_data['hora_inicio'] = fecha_dt.replace(hour=9, minute=0)
-                initial_data['hora_fin'] = fecha_dt.replace(hour=11, minute=0)
-            except ValueError:
-                pass
-
-        form = ClaseForm(initial=initial_data)
-
+        # Se pre-carga la fecha si viene por GET desde el calendario
+        fecha_get = request.GET.get('fecha')
+        form = ClaseForm(initial={'materia': materia, 'link_clase': materia.link_clase, 'fecha': fecha_get})
     return render(request, 'asistencias/crear_clase.html', {'materia': materia, 'form': form})
-
 
 @requiere_nivel(2)
 def editar_clase(request, clase_id):
-    if request.user.nivel == 6:
-        return HttpResponseForbidden("No tenés permisos para editar clases.")
     clase = get_object_or_404(Clase, id=clase_id)
-    materia = clase.materia
+    u = request.user
+    # Es coordinador si nivel >= 3 o si está en la lista de coordinadores de la diplo
+    es_coord = u.nivel >= 3 or clase.materia.diplomatura.coordinadores.filter(id=u.id).exists()
     
-    # Permisos (mismo check que crear_clase)
-    if not (ProfesorMateria.objects.filter(user=request.user, materia=materia).exists() or materia.profesor_titular == request.user):
-        return HttpResponseForbidden("No tenés permiso para editar esta clase.")
+    # El docente nivel 2 solo puede entrar si es titular o profesor asignado
+    es_profe = ProfesorMateria.objects.filter(user=u, materia=clase.materia).exists() or clase.materia.profesor_titular == u
+
+    if not (es_coord or es_profe):
+        return HttpResponseForbidden("No tienes permiso para editar esta clase.")
 
     if request.method == 'POST':
         form = ClaseForm(request.POST, instance=clase)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Clase actualizada.")
-            return redirect('asistencias:home') # O volver al calendario
+            instancia = form.save(commit=False)
+            # SI NO ES COORDINADOR: Forzamos que los campos administrativos no cambien
+            if not es_coord:
+                # Recuperamos los valores originales de la DB para asegurar que no se alteren
+                clase_original = Clase.objects.get(id=clase.id)
+                instancia.fecha = clase_original.fecha
+                instancia.hora_inicio = clase_original.hora_inicio
+                instancia.hora_fin = clase_original.hora_fin
+                instancia.materia = clase_original.materia
+            
+            instancia.save()
+            messages.success(request, "Cambios guardados correctamente.")
+            return redirect('asistencias:home')
     else:
         form = ClaseForm(instance=clase)
+        # Si es Profe (Nivel 2), deshabilitamos los campos en el formulario (visual)
+        if not es_coord:
+            for campo in ['fecha', 'hora_inicio', 'hora_fin', 'materia']:
+                form.fields[campo].widget.attrs['readonly'] = True
+                form.fields[campo].widget.attrs['class'] = 'form-control bg-dark muted'
 
-    return render(request, 'asistencias/editar_clase.html', {'form': form, 'clase': clase})
-
+    return render(request, 'asistencias/editar_clase.html', {
+        'form': form, 
+        'clase': clase, 
+        'es_coord': es_coord
+    })
 
 @requiere_nivel(2)
 def eliminar_clase(request, clase_id):
-    if request.user.nivel == 6:
-        return HttpResponseForbidden("No tenés permisos para eliminar clases.")
     clase = get_object_or_404(Clase, id=clase_id)
-    materia = clase.materia
-    
-    if not (ProfesorMateria.objects.filter(user=request.user, materia=materia).exists() or materia.profesor_titular == request.user):
-        return HttpResponseForbidden("No tenés permiso para eliminar esta clase.")
-
+    # SOLO Coordinadores eliminan
+    if request.user.nivel < 3:
+        return HttpResponseForbidden("Solo los coordinadores pueden eliminar clases.")
     if request.method == 'POST':
         clase.delete()
-        messages.success(request, "Clase eliminada.")
+        messages.success(request, "Clase eliminada del cronograma.")
         return redirect('asistencias:home')
-
     return render(request, 'asistencias/eliminar_clase.html', {'clase': clase})
-
-
-
-@requiere_nivel(2)
-def listado_presentes(request, materia_id):
-    materia = get_object_or_404(Materia.objects.select_related('diplomatura'), id=materia_id)
-
-    # Solo docentes (titular o adjunto) de esta materia
-    if not ProfesorMateria.objects.filter(user=request.user, materia=materia).exists():
-        return HttpResponseForbidden("No sos profesor de esta materia.")
-
-    # Inscritos con user prefetch
-    inscriptos = (InscripcionMateria.objects
-                  .filter(materia=materia)
-                  .select_related('user')
-                  .order_by('user__last_name', 'user__first_name'))
-
-    # Prefetch asistencias por clase para no hacer N+1
-    clases = (materia.clases
-              .all()
-              .prefetch_related(
-                  Prefetch('asistencias',
-                           queryset=Asistencia.objects.select_related('user').only('user_id', 'presente', 'timestamp'))
-              )
-              .order_by('-fecha', '-hora_inicio'))
-
-    # Armamos “filas” por clase: cada fila = un alumno inscrito + su asistencia (si existe)
-    planillas = []  # [(clase, [filas])]
-    for clase in clases:
-        # Map rápido user_id -> asistencia
-        a_por_uid = {a.user_id: a for a in clase.asistencias.all()}
-
-        filas = []
-        for ins in inscriptos:
-            u = ins.user
-            a = a_por_uid.get(u.id)  # puede ser None
-            filas.append({
-                'dni': u.dni,
-                'alumno': f"{u.last_name}, {u.first_name}",
-                'presente': (a.presente if a else False),
-                'timestamp': (a.timestamp if a else None),
-            })
-        planillas.append((clase, filas))
-
-    return render(request, 'asistencias/listado_presentes.html', {
-        'materia': materia,
-        'planillas': planillas,
-    })
-
-
-# asistencias/views/docentes.py (o donde la tengas)
-from django.http import HttpResponseForbidden
-from asistencias.models import AccesoToken, Materia
-
-@requiere_nivel(2)
-def generar_token_adjunto(request, materia_id):
-    materia = get_object_or_404(Materia, id=materia_id)
-    if materia.profesor_titular_id != request.user.id:
-        return HttpResponseForbidden("Sólo el titular puede generar este token.")
-
-    tok = AccesoToken.objects.create(
-        nivel_destino=2,
-        materia=materia,
-        creado_por=request.user,
-    )
-    messages.success(request, f"Token generado: {tok.code}")
-    return redirect('asistencias:listado_presentes', materia_id=materia.id)

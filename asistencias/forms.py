@@ -1,11 +1,10 @@
-# asistencias/forms.py
+# FILE: asistencias/forms.py
 from django import forms
 from django.contrib.auth import get_user_model
 from allauth.account.forms import SignupForm as AllauthSignupForm
 from .models import Diplomatura, Materia, Clase, Nota
 
 User = get_user_model()
-
 
 class CrearMateriaForm(forms.ModelForm):
     diplomatura = forms.ModelChoiceField(
@@ -30,8 +29,7 @@ class MateriaForm(forms.ModelForm):
         fields = ['diplomatura', 'nombre', 'descripcion', "link_clase"]
 
 class ClaseForm(forms.ModelForm):
-    class Meta:
-        model = Clase
+    # Campos adicionales para la creación masiva
     repetir_cada = forms.IntegerField(
         required=False, 
         min_value=1, 
@@ -40,16 +38,33 @@ class ClaseForm(forms.ModelForm):
     )
     repetir_hasta = forms.DateField(
         required=False, 
-        widget=forms.DateInput(attrs={'type': 'date'}),
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
         label="Repetir hasta"
     )
 
     class Meta:
         model = Clase
-        fields = ['materia', 'hora_inicio', 'hora_fin', 'tema', 'link_clase']
+        fields = [
+            'materia', 
+            'fecha', 
+            'hora_inicio', 
+            'hora_fin', 
+            'tema', 
+            'link_clase', 
+            'comentarios_docente'
+        ]
         widgets = {
-            'hora_inicio': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'hora_fin': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'materia': forms.Select(attrs={'class': 'form-control'}),
+            'fecha': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'hora_inicio': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'hora_fin': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'tema': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Introducción a Python'}),
+            'link_clase': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://zoom.us/j/...'}),
+            'comentarios_docente': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 3, 
+                'placeholder': 'Observaciones para los alumnos o el coordinador...'
+            }),
         }
 
 class MarcarPresenteForm(forms.Form):
@@ -65,8 +80,8 @@ class NotaForm(forms.ModelForm):
         model = Nota
         fields = ['valor', 'observaciones']
         widgets = {
-            'valor': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'max': '10'}),
-            'observaciones': forms.Textarea(attrs={'rows': 3}),
+            'valor': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'max': '10', 'class': 'form-control'}),
+            'observaciones': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
         }
 
 class SignupForm(AllauthSignupForm):
@@ -75,10 +90,7 @@ class SignupForm(AllauthSignupForm):
     last_name = forms.CharField(label="Apellido", max_length=50)
     second_last_name = forms.CharField(label="Segundo apellido", max_length=50, required=False)
     dni = forms.CharField(label="DNI", max_length=20)
-
-    # confirmación de email (si lo querés controlar vos; si no, poné en settings ACCOUNT_SIGNUP_EMAIL_ENTER_TWICE=True)
     email2 = forms.EmailField(label="Confirmar email")
-
     token_upgrade = forms.CharField(label="Token de nivel (opcional)", max_length=64, required=False)
 
     def clean(self):

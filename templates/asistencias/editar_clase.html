@@ -1,14 +1,50 @@
+# FILE: templates/asistencias/editar_clase.html
 {% extends 'base.html' %}
-{% block title %}Editar clase{% endblock %}
-{% block content %}
-<h1>Editar clase · {{ clase.materia.nombre }}</h1>
+{% block title %}Editar Clase{% endblock %}
 
-<form method="post" class="card">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <div class="actions">
-        <button class="btn" type="submit">Guardar cambios</button>
-        <a class="btn secondary" href="{% url 'asistencias:home' %}">Cancelar</a>
-    </div>
-</form>
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <h2>Editar Clase</h2>
+    <p class="muted">{{ clase.materia.nombre }} - {{ clase.fecha }}</p>
+    <hr>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        {% if es_coord %}
+            <div class="form-group">{{ form.as_p }}</div>
+        {% else %}
+            <div style="background: #333; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <p><strong>Fecha y Horario:</strong> {{ clase.fecha }} ({{ clase.hora_inicio|time:"H:i" }} - {{ clase.hora_fin|time:"H:i" }})</p>
+                <p class="muted" style="font-size: 0.8rem;">* Los horarios solo pueden ser modificados por la coordinación.</p>
+            </div>
+
+            <div class="form-group">
+                <label>Tema de la clase:</label>
+                {{ form.tema }}
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>Link de la clase (Zoom/Meet):</label>
+                {{ form.link_clase }}
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>Comentarios para alumnos:</label>
+                {{ form.comentarios_docente }}
+            </div>
+            
+            <div style="display:none;">
+                {{ form.materia }} {{ form.fecha }} {{ form.hora_inicio }} {{ form.hora_fin }}
+            </div>
+        {% endif %}
+
+        <div style="margin-top: 25px; display: flex; gap: 10px;">
+            <button type="submit" class="btn">Guardar Cambios</button>
+            <a href="{% url 'asistencias:home' %}" class="btn secondary">Cancelar</a>
+            
+            {% if es_coord %}
+            <a href="{% url 'asistencias:eliminar_clase' clase.id %}" class="btn" style="background: #c0392b; margin-left: auto;">Eliminar Clase</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
 {% endblock %}

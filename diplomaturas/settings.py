@@ -26,13 +26,13 @@ environ.Env.read_env(str(Path(__file__).resolve().parent.parent / ".env"))
 #usamos esta variable 'SECRET_KEY' para seguridad, permitiendonos firmar cookies y otros datos, a fin de evitar manipulaciones como la falsificacion de solicitudes entre sitios (CSRF)
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret")
-DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
-
+#DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
+DEBUG = True
 # ALLOWED_HOSTS define una lista de nombres de host/domains que esta aplicacion puede servir
 # En desarrollo, podemos usar ['*'] para permitir todos los hosts
 # En produccion, debemos especificar los nombres de host permitidos
 # Un nombre de host hace referencia a la direccion IP o dominio a traves del cual se accede a la aplicacion
-# ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*']
 #
 
 

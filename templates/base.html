@@ -1,3 +1,4 @@
+# FILE: templates/base.html
 {% load static %}
 <!doctype html>
 <html lang="es">
@@ -7,6 +8,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>{% block title %}Asistencias Diplomaturas{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'core/styles.css' %}?v={% now 'U' %}">
+  <style>
+    /* Estilos rápidos para el dropdown de roles y mejoras visuales */
+    .dropdown-content a:hover { background-color: #555 !important; }
+    .nav-user-info { color: #ccc; font-size: 0.9rem; margin-right: 10px; }
+    .badge-nivel { background: #444; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; }
+  </style>
 </head>
 
 <body>
@@ -14,65 +21,60 @@
     <div class="container">
       <nav class="navbar">
         <div class="nav-left">
-          <a href="{% url 'asistencias:home' %}">Inicio</a>
+          <a href="{% url 'asistencias:home' %}" style="font-weight: bold; color: #fff;">Inicio</a>
 
           {% if request.user.is_authenticated %}
-          <a href="{% url 'asistencias:consulta_publica' %}">Consultar</a>
-          {% if request.user.nivel != 7 %}
-          {% if request.user.nivel == 6 %}
-          <a href="{% url 'asistencias:insc_diplomatura_codigo' %}">Inscribirse a diplomatura</a>
-          {% else %}
-          <a href="{% url 'asistencias:insc_materia_codigo' %}">Inscribirse a materia</a>
-          {% endif %}
-          {% endif %}
-          <a href="{% url 'asistencias:usar_token' %}">Canjear Token</a>
+            <a href="{% url 'asistencias:listar_materias' %}">Mis Materias</a>
+            
+            {% if request.user.nivel < 6 %}
+              <a href="{% url 'asistencias:insc_materia_codigo' %}">Inscribirse</a>
+            {% endif %}
 
+            {% if request.user.nivel >= 2 and request.user.nivel != 6 %}
+              <a href="{% url 'asistencias:listar_diplomaturas' %}">Diplomaturas</a>
+            {% endif %}
 
-          {% if request.user.nivel == 3 or request.user.nivel == 5 %}
-          <a href="{% url 'asistencias:exportar_xlsx' %}">Exportar datos</a>
-          <a href="{% url 'asistencias:listar_diplomaturas' %}">Diplomaturas</a>
-          <a href="{% url 'asistencias:generar_constancia' %}">Constancia Alumno</a>
-          {% endif %}
+            {% if request.user.nivel == 3 or request.user.nivel == 5 %}
+              <a href="{% url 'asistencias:exportar_xlsx' %}">Exportar</a>
+              <a href="{% url 'asistencias:generar_constancia' %}">Constancias</a>
+            {% endif %}
+
+            {% if request.user.nivel == 6 %}
+              <a href="{% url 'asistencias:referente_dashboard' %}">Dashboard</a>
+            {% endif %}
+
+            <a href="{% url 'asistencias:usar_token' %}" style="color: #ffcc00;">Canjear Token</a>
           {% else %}
-          <a href="{% url 'account_login' %}">Ingresar</a>
-          <a href="{% url 'account_signup' %}">Registrarse</a>
+            <a href="{% url 'login' %}">Ingresar</a>
+            <a href="{% url 'account_signup' %}">Registrarse</a>
           {% endif %}
         </div>
 
         {% if request.user.is_authenticated %}
         <div class="nav-right" style="display: flex; align-items: center; gap: 15px;">
+          
+          <span class="nav-user-info">
+            {{ request.user.first_name }} <span class="badge-nivel">Nivel {{ request.user.nivel }}</span>
+          </span>
+
           {% if request.user.nivel == 7 or request.session.impersonate_role %}
           <div class="dropdown" style="position: relative; display: inline-block;">
             <button class="btn-icon" onclick="toggleDropdown()"
-              style="background:none; border:none; color:white; font-size: 1.2rem; cursor: pointer;">
+              style="background:none; border:none; color:white; font-size: 1.2rem; cursor: pointer;" title="Cambiar Vista de Rol">
               👁️
             </button>
-            <div id="roleDropdown" class="dropdown-content"
-              style="display: none; position: absolute; right: 0; background-color: #333; min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1000;">
-              <a href="{% url 'asistencias:switch_role' 1 %}"
-                style="color: white; padding: 12px 16px; text-decoration: none; display: block;">Alumno {% if
-                request.user.nivel == 1 %}✓{% endif %}</a>
-              <a href="{% url 'asistencias:switch_role' 2 %}"
-                style="color: white; padding: 12px 16px; text-decoration: none; display: block;">Docente {% if
-                request.user.nivel == 2 %}✓{% endif %}</a>
-              <a href="{% url 'asistencias:switch_role' 3 %}"
-                style="color: white; padding: 12px 16px; text-decoration: none; display: block;">Coordinador {% if
-                request.user.nivel == 3 %}✓{% endif %}</a>
-              <a href="{% url 'asistencias:switch_role' 6 %}"
-                style="color: white; padding: 12px 16px; text-decoration: none; display: block;">Referente Mun. {% if
-                request.user.nivel == 6 %}✓{% endif %}</a>
-              <a href="{% url 'asistencias:switch_role' 7 %}"
-                style="color: white; padding: 12px 16px; text-decoration: none; display: block;">Supervisor {% if
-                request.user.nivel == 7 %}✓{% endif %}</a>
+            <div id="roleDropdown" class="dropdown-content" style="display: none; position: absolute; right: 0; background-color: #333; min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1000;">
+              <a href="{% url 'asistencias:switch_role' 1 %}" style="color: white; padding: 12px 16px; text-decoration: none; display: block;">Alumno</a>
+              <a href="{% url 'asistencias:switch_role' 2 %}" style="color: white; padding: 12px 16px; text-decoration: none; display: block;">Docente</a>
+              <a href="{% url 'asistencias:switch_role' 3 %}" style="color: white; padding: 12px 16px; text-decoration: none; display: block;">Coordinador</a>
+              <a href="{% url 'asistencias:switch_role' 6 %}" style="color: white; padding: 12px 16px; text-decoration: none; display: block;">Referente Mun.</a>
+              <a href="{% url 'asistencias:switch_role' 7 %}" style="color: white; padding: 12px 16px; text-decoration: none; display: block;">Supervisor</a>
             </div>
           </div>
-          <style>
-            .dropdown-content a:hover {
-              background-color: #555;
-            }
-          </style>
           {% endif %}
-          <a href="{% url 'account_logout' %}" class="btn-logout">Salir</a>
+
+          <a href="{% url 'asistencias:perfil' %}" title="Mi Perfil">⚙️</a>
+          <a href="{% url 'logout' %}" class="btn-logout">Salir</a>
         </div>
         {% endif %}
       </nav>
@@ -80,26 +82,25 @@
   </header>
 
   <main class="container">
-    {% for message in messages %}
-    <div class="alert">{{ message }}</div>
-    {% endfor %}
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+    
     {% block content %}{% endblock %}
   </main>
 
   <footer class="footer">
-    <div class="container">© 2025</div>
+    <div class="container">© 2025 - Sistema de Gestión de Asistencias</div>
   </footer>
 
   <script>
     function toggleDropdown() {
       var d = document.getElementById("roleDropdown");
-      if (d.style.display === "block") {
-        d.style.display = "none";
-      } else {
-        d.style.display = "block";
-      }
+      d.style.display = (d.style.display === "block") ? "none" : "block";
     }
-    // Close if clicked outside
+    
     window.onclick = function (event) {
       if (!event.target.matches(".btn-icon")) {
         var dropdowns = document.getElementsByClassName("dropdown-content");
@@ -113,5 +114,4 @@
     }
   </script>
 </body>
-
 </html>
