@@ -5,10 +5,10 @@
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
   <h1>Inicio</h1>
   <div style="display: flex; gap: 10px;">
-    {% if request.user.nivel >= 3 %}
+    {% if request.user.nivel >= 3 and request.user.nivel != 6 %}
     <a class="btn" href="{% url 'asistencias:crear_diplomatura' %}">+ Nueva Diplomatura</a>
     {% endif %}
-    {% if request.user.nivel >= 2 %}
+    {% if request.user.nivel >= 2 and request.user.nivel != 6 %}
     <a class="btn" href="{% url 'asistencias:crear_materia' %}">+ Nueva Materia</a>
     {% endif %}
   </div>
