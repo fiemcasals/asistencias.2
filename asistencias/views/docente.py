@@ -14,6 +14,8 @@ from django.db.models import Prefetch
 
 @requiere_nivel(2)
 def crear_materia(request):
+    if request.user.nivel == 6:
+        return HttpResponseForbidden("No tenés permisos para crear materias.")
     if request.method == "POST":
         form = CrearMateriaForm(request.POST)
         if form.is_valid():

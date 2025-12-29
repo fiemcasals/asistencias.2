@@ -14,6 +14,7 @@
         <p>{{ d.descripcion|truncatechars:100 }}</p>
         <div class="actions" style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
             <a href="{% url 'asistencias:calendario_referente' d.id %}" class="btn primary">Ver Cronograma</a>
+            <a href="{% url 'asistencias:referente_materias' d.id %}" class="btn secondary">Ver Notas / Materias</a>
             <a href="{% url 'asistencias:exportar_asistencia_diplomatura' d.id %}" class="btn secondary">Exportar
                 Asistencias (Todas)</a>
         </div>

@@ -46,6 +46,9 @@ urlpatterns = [
     # Referente Municipal / nivel 6
     path('referente/dashboard/', views.dashboard, name='referente_dashboard'),
     path('referente/diplomaturas/<int:diplomatura_id>/calendario/', views.calendario_referente, name='calendario_referente'),
+    path('referente/clases/<int:clase_id>/asistencia/', views.ver_asistencia_clase, name='ver_asistencia_clase'),
+    path('referente/diplomaturas/<int:diplomatura_id>/materias/', views.listar_materias_referente, name='referente_materias'),
+    path('referente/materias/<int:materia_id>/notas/', views.ver_notas_materia, name='ver_notas_materia'),
     
     # Supervisor / nivel 7
     path('supervisor/switch-role/<int:role_id>/', views.switch_role, name='switch_role'),

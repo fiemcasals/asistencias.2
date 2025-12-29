@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Asistencia: {{ clase.materia.nombre }} - {{ clase.fecha }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>Asistencia: {{ clase.materia.nombre }}</h1>
+        <a href="{% url 'asistencias:calendario_referente' clase.materia.diplomatura.id %}" class="btn secondary">Volver
+            al Calendario</a>
+    </div>
+    <p><strong>Fecha:</strong> {{ clase.fecha }} | <strong>Horario:</strong> {{ clase.hora_inicio|date:"H:i" }} - {{
+        clase.hora_fin|date:"H:i" }}</p>
+    <p><strong>Tema:</strong> {{ clase.tema }}</p>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Alumno</th>
+                    <th>Estado</th>
+                    <th>Hora Registro</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in lista_completa %}
+                <tr>
+                    <td>{{ item.alumno.last_name }}, {{ item.alumno.first_name }}</td>
+                    <td>
+                        {% if item.presente %}
+                        <span style="color: var(--success);">Presente</span>
+                        {% else %}
+                        <span style="color: var(--error);">Ausente</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.timestamp|date:"H:i:s"|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3">No hay alumnos inscriptos.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

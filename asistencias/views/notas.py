@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Avg
@@ -7,6 +8,8 @@ from ..forms import NotaForm
 
 @login_required
 def cargar_notas(request, materia_id):
+    if request.user.nivel == 6:
+        return HttpResponseForbidden("No tenés permisos para cargar notas.")
     materia = get_object_or_404(Materia, id=materia_id)
     
     # Verificar si el usuario es profesor de la materia o coordinador

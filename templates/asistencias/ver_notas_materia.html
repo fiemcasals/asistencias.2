@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Notas: {{ materia.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>Notas: {{ materia.nombre }}</h1>
+        <a href="{% url 'asistencias:referente_dashboard' %}" class="btn secondary">Volver al Panel</a>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Alumno</th>
+                    <th>Nota</th>
+                    <th>Fecha</th>
+                    <th>Evaluador</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for nota in notas %}
+                <tr>
+                    <td>{{ nota.alumno.last_name }}, {{ nota.alumno.first_name }}</td>
+                    <td>{{ nota.valor }}</td>
+                    <td>{{ nota.fecha|date:"d/m/Y" }}</td>
+                    <td>{{ nota.evaluador.first_name }} {{ nota.evaluador.last_name }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">No hay notas cargadas.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

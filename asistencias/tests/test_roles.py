@@ -59,6 +59,36 @@ class RoleTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
+    def test_referente_read_only_access(self):
+        self.client.login(email='ref@test.com', password='password')
+        
+        # View class attendance
+        response = self.client.get(reverse('asistencias:ver_asistencia_clase', args=[self.clase.id]))
+        self.assertEqual(response.status_code, 200)
+        
+        # View subjects list
+        response = self.client.get(reverse('asistencias:referente_materias', args=[self.diplo.id]))
+        self.assertEqual(response.status_code, 200)
+        
+        # View grades (needs a Nota to be interesting, but 200 is enough for access check)
+        response = self.client.get(reverse('asistencias:ver_notas_materia', args=[self.materia.id]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_referente_write_restrictions(self):
+        self.client.login(email='ref@test.com', password='password')
+        
+        # Create Materia
+        response = self.client.get(reverse('asistencias:crear_materia'))
+        self.assertEqual(response.status_code, 403)
+        
+        # Create Diplomatura
+        response = self.client.get(reverse('asistencias:crear_diplomatura'))
+        self.assertEqual(response.status_code, 403)
+        
+        # Load Grades
+        response = self.client.get(reverse('asistencias:cargar_notas', args=[self.materia.id]))
+        self.assertEqual(response.status_code, 403)
+
     def test_alumno_cannot_access_referente_views(self):
         self.client.login(email='alu@test.com', password='password')
         response = self.client.get(reverse('asistencias:referente_dashboard'))

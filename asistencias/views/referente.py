@@ -1,62 +1,41 @@
-from django.shortcuts import render, get_object_or_404
-from django.db.models import Q, Count, Case, When, IntegerField
-from asistencias.models import Diplomatura, Materia, Clase, Asistencia, InscripcionDiplomatura
+from django.shortcuts import render, get_object_or_404, redirect
+from django.db.models import Prefetch, Avg
+from asistencias.models import Diplomatura, InscripcionDiplomatura, Clase, Asistencia, Materia, InscripcionMateria, Nota
 from asistencias.permissions import requiere_nivel
 
-@requiere_nivel(6) # Referente Municipal or higher
+@requiere_nivel(6)
 def dashboard(request):
-    """
-    Dashboard for Referente Municipal.
-    Shows Diplomaturas where the Referente is registered.
-    """
     diplomaturas = Diplomatura.objects.filter(
         inscripciones__user=request.user
     ).distinct()
-    
-    return render(request, 'asistencias/referente_dashboard.html', {
-        'diplomaturas': diplomaturas
-    })
+    return render(request, 'asistencias/referente_dashboard.html', {'diplomaturas': diplomaturas})
 
 @requiere_nivel(6)
 def calendario_referente(request, diplomatura_id):
-    """
-    Calendar view for Referente Municipal.
-    Shows all classes for the diplomatura with attendance stats.
-    """
     diplomatura = get_object_or_404(Diplomatura, id=diplomatura_id)
     
-    # Verify Referente is registered in this Diplomatura (or is Supervisor/Admin)
-    if not InscripcionDiplomatura.objects.filter(user=request.user, diplomatura=diplomatura).exists() and request.user.nivel < 7:
-         # You might want to return Forbidden here, or just redirect. 
-         # For now, let's assume if they have the link and are level 6, check registration.
-         pass # Logic handled by filter below effectively, but explicit check is better.
+    if not InscripcionDiplomatura.objects.filter(user=request.user, diplomatura=diplomatura).exists() and request.user.nivel != 7:
+         return redirect('asistencias:referente_dashboard')
 
-    # Get all subjects for this diplomatura
-    materias = Materia.objects.filter(diplomatura=diplomatura)
-    
-    # Get all classes
-    clases = Clase.objects.filter(materia__in=materias).select_related('materia')
+    clases = Clase.objects.filter(materia__diplomatura=diplomatura).select_related('materia')
     
     eventos = []
     for c in clases:
-        # Calculate stats
-        # Total registered students for the subject
         total_inscriptos = c.materia.inscripciones.count()
-        
-        # Total present for this class
         total_presentes = c.asistencias.filter(presente=True).count()
         
         eventos.append({
+            'id': c.id,
             'title': f"{c.materia.nombre} ({total_presentes}/{total_inscriptos})",
             'start': c.fecha.isoformat(),
-            'id': c.id,
-            'materia_id': c.materia.id,
-            'color': '#2196F3', # Blue for Referente
-            'can_edit': False,
-            'link_clase': c.link_clase,
+            'hora_inicio': c.hora_inicio.strftime("%H:%M"),
+            'hora_fin': c.hora_fin.strftime("%H:%M"),
             'tema': c.tema,
-            'hora_inicio': c.hora_inicio.strftime('%H:%M'),
-            'hora_fin': c.hora_fin.strftime('%H:%M'),
+            'link_clase': c.link_clase,
+            'materia_id': c.materia.id,
+            'can_edit': False,
+            'color': '#28a745' if total_presentes > 0 else '#6c757d',
+            'url': f"/referente/clases/{c.id}/asistencia/", # Link to details
             'stats': {
                 'presentes': total_presentes,
                 'inscriptos': total_inscriptos
@@ -66,5 +45,61 @@ def calendario_referente(request, diplomatura_id):
     return render(request, 'asistencias/calendario.html', {
         'diplomatura': diplomatura,
         'eventos': eventos,
-        'es_referente': True, # Flag to show stats in template
+        'es_referente': True
+    })
+
+@requiere_nivel(6)
+def ver_asistencia_clase(request, clase_id):
+    clase = get_object_or_404(Clase.objects.select_related('materia', 'materia__diplomatura'), id=clase_id)
+    diplomatura = clase.materia.diplomatura
+    
+    if not InscripcionDiplomatura.objects.filter(user=request.user, diplomatura=diplomatura).exists() and request.user.nivel != 7:
+         return redirect('asistencias:referente_dashboard')
+
+    asistencias = Asistencia.objects.filter(clase=clase).select_related('user').order_by('user__last_name')
+    inscriptos = InscripcionMateria.objects.filter(materia=clase.materia).select_related('user').order_by('user__last_name')
+    
+    lista_completa = []
+    asistencia_map = {a.user_id: a for a in asistencias}
+    
+    for insc in inscriptos:
+        a = asistencia_map.get(insc.user.id)
+        lista_completa.append({
+            'alumno': insc.user,
+            'presente': a.presente if a else False,
+            'timestamp': a.timestamp if a else None
+        })
+
+    return render(request, 'asistencias/ver_asistencia_clase.html', {
+        'clase': clase,
+        'lista_completa': lista_completa
+    })
+
+@requiere_nivel(6)
+def listar_materias_referente(request, diplomatura_id):
+    diplomatura = get_object_or_404(Diplomatura, id=diplomatura_id)
+    
+    if not InscripcionDiplomatura.objects.filter(user=request.user, diplomatura=diplomatura).exists() and request.user.nivel != 7:
+         return redirect('asistencias:referente_dashboard')
+
+    materias = Materia.objects.filter(diplomatura=diplomatura)
+    
+    return render(request, 'asistencias/referente_materias.html', {
+        'diplomatura': diplomatura,
+        'materias': materias
+    })
+
+@requiere_nivel(6)
+def ver_notas_materia(request, materia_id):
+    materia = get_object_or_404(Materia.objects.select_related('diplomatura'), id=materia_id)
+    diplomatura = materia.diplomatura
+    
+    if not InscripcionDiplomatura.objects.filter(user=request.user, diplomatura=diplomatura).exists() and request.user.nivel != 7:
+         return redirect('asistencias:referente_dashboard')
+
+    notas = Nota.objects.filter(materia=materia).select_related('alumno', 'evaluador').order_by('alumno__last_name')
+    
+    return render(request, 'asistencias/ver_notas_materia.html', {
+        'materia': materia,
+        'notas': notas
     })

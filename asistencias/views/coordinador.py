@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponseForbidden
 from django.contrib import messages
 
 from asistencias.models import Diplomatura
@@ -7,6 +8,8 @@ from asistencias.permissions import requiere_nivel
 
 @requiere_nivel(3)
 def crear_diplomatura(request):
+    if request.user.nivel == 6:
+        return HttpResponseForbidden("No tenés permisos para crear diplomaturas.")
     if request.method == 'POST':
         nombre = request.POST.get('nombre', '').strip()
         codigo = request.POST.get('codigo', '').strip()

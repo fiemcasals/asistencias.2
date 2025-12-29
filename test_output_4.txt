@@ -1,0 +1,44 @@
+Creating test database for alias 'default'...
+System check identified some issues:
+
+WARNINGS:
+?: settings.ACCOUNT_USERNAME_REQUIRED is deprecated, use: settings.ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+
+System check identified 1 issue (0 silenced).
+/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1670: RuntimeWarning: DateTimeField Clase.hora_inicio received a naive datetime (2025-12-28 22:30:20.703472) while time zone support is active.
+  warnings.warn(
+/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1670: RuntimeWarning: DateTimeField Clase.hora_fin received a naive datetime (2025-12-28 22:30:20.703477) while time zone support is active.
+  warnings.warn(
+/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/core/handlers/base.py:62: UserWarning: No directory at: /home/mauri/uni/antigravity/asistencias/asistencias.2/staticfiles/
+  mw_instance = middleware(adapted_handler)
+./home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1670: RuntimeWarning: DateTimeField Clase.hora_inicio received a naive datetime (2025-12-28 22:30:41.644974) while time zone support is active.
+  warnings.warn(
+/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1670: RuntimeWarning: DateTimeField Clase.hora_fin received a naive datetime (2025-12-28 22:30:41.644979) while time zone support is active.
+  warnings.warn(
+./home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1670: RuntimeWarning: DateTimeField Clase.hora_inicio received a naive datetime (2025-12-28 22:31:02.718783) while time zone support is active.
+  warnings.warn(
+/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1670: RuntimeWarning: DateTimeField Clase.hora_fin received a naive datetime (2025-12-28 22:31:02.718788) while time zone support is active.
+  warnings.warn(
+./home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1670: RuntimeWarning: DateTimeField Clase.hora_inicio received a naive datetime (2025-12-28 22:31:26.556509) while time zone support is active.
+  warnings.warn(
+/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1670: RuntimeWarning: DateTimeField Clase.hora_fin received a naive datetime (2025-12-28 22:31:26.556515) while time zone support is active.
+  warnings.warn(
+./home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1670: RuntimeWarning: DateTimeField Clase.hora_inicio received a naive datetime (2025-12-28 22:31:48.881094) while time zone support is active.
+  warnings.warn(
+/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1670: RuntimeWarning: DateTimeField Clase.hora_fin received a naive datetime (2025-12-28 22:31:48.881100) while time zone support is active.
+  warnings.warn(
+./home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1670: RuntimeWarning: DateTimeField Clase.hora_inicio received a naive datetime (2025-12-28 22:32:10.304284) while time zone support is active.
+  warnings.warn(
+/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1670: RuntimeWarning: DateTimeField Clase.hora_fin received a naive datetime (2025-12-28 22:32:10.304287) while time zone support is active.
+  warnings.warn(
+./home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1670: RuntimeWarning: DateTimeField Clase.hora_inicio received a naive datetime (2025-12-28 22:32:32.391122) while time zone support is active.
+  warnings.warn(
+/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1670: RuntimeWarning: DateTimeField Clase.hora_fin received a naive datetime (2025-12-28 22:32:32.391127) while time zone support is active.
+  warnings.warn(
+.
+----------------------------------------------------------------------
+Ran 7 tests in 154.767s
+
+OK
+Destroying test database for alias 'default'...
+Found 7 test(s).

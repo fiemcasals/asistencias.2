@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Materias: {{ diplomatura.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>Materias: {{ diplomatura.nombre }}</h1>
+        <a href="{% url 'asistencias:referente_dashboard' %}" class="btn secondary">Volver</a>
+    </div>
+
+    <div class="card-grid">
+        {% for m in materias %}
+        <div class="card">
+            <h3>{{ m.nombre }}</h3>
+            <div class="actions" style="margin-top: 15px;">
+                <a href="{% url 'asistencias:ver_notas_materia' m.id %}" class="btn primary">Ver Notas</a>
+            </div>
+        </div>
+        {% empty %}
+        <p>No hay materias en esta diplomatura.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .card {
+        background: var(--card-bg);
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+</style>
+{% endblock %}
