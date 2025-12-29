@@ -50,6 +50,8 @@ class User(AbstractUser):
         (3, 'Coordinador'),
         (4, 'Gestor'),
         (5, 'Administrador'),
+        (6, 'Referente Municipal'),
+        (7, 'Supervisor'),
     ]
   
     nivel = models.PositiveSmallIntegerField(choices=NIVEL_CHOICES, default=1)

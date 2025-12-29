@@ -1,4 +1,5 @@
 from django.http import HttpResponse, HttpResponseForbidden
+from django.shortcuts import get_object_or_404
 from django.utils.timezone import localtime
 from django.utils import timezone
 from django.contrib.auth import get_user_model
@@ -191,6 +192,10 @@ def exportar_asistencia_materia(request, materia_id):
     tiene_permiso = False
     if request.user.nivel >= 3:
         tiene_permiso = True
+    elif request.user.nivel == 6: # Referente Municipal
+        # Check if registered in the diplomatura of this materia
+        if InscripcionDiplomatura.objects.filter(user=request.user, diplomatura=materia.diplomatura).exists():
+            tiene_permiso = True
     elif request.user.nivel == 2:
         # Verificar si es titular
         if materia.profesor_titular_id == request.user.id:
@@ -251,6 +256,78 @@ def exportar_asistencia_materia(request, materia_id):
     buffer.seek(0)
 
     filename = f"asistencia_{materia.codigo}_{localtime(timezone.now()).strftime('%Y%m%d')}.xlsx"
+    resp = HttpResponse(
+        buffer.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    resp["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return resp
+
+
+def exportar_asistencia_diplomatura(request, diplomatura_id):
+    """
+    Exporta la asistencia de TODAS las materias de una diplomatura.
+    Cada materia en una hoja distinta.
+    """
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden("No autenticado.")
+
+    diplomatura = get_object_or_404(Diplomatura, id=diplomatura_id)
+
+    # Permisos: Coordinador (3), Admin (5), Referente (6) (si está inscripto)
+    tiene_permiso = False
+    if request.user.nivel in [3, 5, 7]: # Incluye Supervisor
+        tiene_permiso = True
+    elif request.user.nivel == 6:
+        if InscripcionDiplomatura.objects.filter(user=request.user, diplomatura=diplomatura).exists():
+            tiene_permiso = True
+            
+    if not tiene_permiso:
+        return HttpResponseForbidden("No tenés permiso para exportar esta diplomatura.")
+
+    wb = Workbook()
+    wb.remove(wb.active) # Remove default sheet
+
+    materias = Materia.objects.filter(diplomatura=diplomatura).order_by('nombre')
+    
+    if not materias.exists():
+         ws = wb.create_sheet("Info")
+         ws.append(["No hay materias en esta diplomatura."])
+
+    for materia in materias:
+        # Create sheet for materia (limit name length to 31 chars)
+        sheet_name = materia.nombre[:30]
+        ws = wb.create_sheet(sheet_name)
+        
+        clases = Clase.objects.filter(materia=materia).order_by('fecha')
+        inscripciones = InscripcionMateria.objects.filter(materia=materia).select_related('user').order_by('user__last_name', 'user__first_name')
+        alumnos = [i.user for i in inscripciones]
+        
+        asistencias_qs = Asistencia.objects.filter(clase__materia=materia)
+        asistencias_map = {(a.user_id, a.clase_id): a.presente for a in asistencias_qs}
+
+        # Header
+        ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(clases) + 2)
+        ws.cell(row=1, column=1, value=f"{materia.nombre}")
+        
+        headers = ["Alumno"] + [_dt(c.fecha) for c in clases]
+        ws.append(headers)
+        
+        for alumno in alumnos:
+            row = [f"{alumno.last_name}, {alumno.first_name}"]
+            for clase in clases:
+                presente = asistencias_map.get((alumno.id, clase.id))
+                val = "P" if presente is True else ("A" if presente is False else "-")
+                row.append(val)
+            ws.append(row)
+            
+        _autosize(ws)
+
+    buffer = BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    filename = f"asistencia_diplomatura_{diplomatura.codigo}_{localtime(timezone.now()).strftime('%Y%m%d')}.xlsx"
     resp = HttpResponse(
         buffer.getvalue(),
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

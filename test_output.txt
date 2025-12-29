@@ -1,0 +1,57 @@
+Creating test database for alias 'default'...
+System check identified some issues:
+
+WARNINGS:
+?: settings.ACCOUNT_USERNAME_REQUIRED is deprecated, use: settings.ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+
+System check identified 1 issue (0 silenced).
+/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/core/handlers/base.py:62: UserWarning: No directory at: /home/mauri/uni/antigravity/asistencias/asistencias.2/staticfiles/
+  mw_instance = middleware(adapted_handler)
+.F.E.
+======================================================================
+ERROR: test_referente_export_access (asistencias.tests.test_roles.RoleTests.test_referente_export_access)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/mauri/uni/antigravity/asistencias/asistencias.2/asistencias/tests/test_roles.py", line 57, in test_referente_export_access
+    response = self.client.get(reverse('asistencias:exportar_asistencia_diplomatura', args=[self.diplo.id]))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/test/client.py", line 1124, in get
+    response = super().get(
+               ^^^^^^^^^^^^
+  File "/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/test/client.py", line 475, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/test/client.py", line 671, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/test/client.py", line 1087, in request
+    self.check_exception(response)
+  File "/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/test/client.py", line 802, in check_exception
+    raise exc_value
+  File "/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mauri/uni/antigravity/asistencias/asistencias.2/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mauri/uni/antigravity/asistencias/asistencias.2/asistencias/views/exportar.py", line 274, in exportar_asistencia_diplomatura
+    diplomatura = get_object_or_404(Diplomatura, id=diplomatura_id)
+                  ^^^^^^^^^^^^^^^^^
+NameError: name 'get_object_or_404' is not defined
+
+======================================================================
+FAIL: test_referente_calendar_access (asistencias.tests.test_roles.RoleTests.test_referente_calendar_access)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/mauri/uni/antigravity/asistencias/asistencias.2/asistencias/tests/test_roles.py", line 53, in test_referente_calendar_access
+    self.assertContains(response, 'stats') # Should contain stats in the template context/js
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : Couldn't find 'stats' in the following response
+b'\n<!doctype html>\n<html lang="es">\n\n<head>\n  <meta charset="utf-8" />\n  <meta name="viewport" content="width=device-width,initial-scale=1" />\n  <title>Calendario \xc2\xb7 Diplo Test</title>\n  <link rel="stylesheet" href="/static/core/styles.css?v=1766779351">\n</head>\n\n<body>\n  <header class="topbar">\n    <div class="container">\n      <!-- <a class="brand" href="/">Asistencias</a> -->\n\n      <nav class="navbar">\n        <div class="nav-left">\n          <a href="/">Inicio</a>\n\n          \n          <!-- <a href="/publico/">Dar Presente</a> -->\n          <a href="/publico/consulta/">Consultar</a>\n          <a href="/inscribirse/materia/">Inscribirse a materia</a>\n          <a href="/token/usar/">Canjear Token</a>\n\n\n          \n          \n        </div>\n\n        \n        <div class="nav-right" style="display: flex; align-items: center; gap: 15px;">\n          \n          <a href="/accounts/logout/" class="btn-logout">Salir</a>\n        </div>\n        \n      </nav>\n    </div>\n  </header>\n\n  <main class="container">\n    \n    \n<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">\n    <h1>Calendario \xc2\xb7 Diplo Test</h1>\n    <div style="display: flex; gap: 10px;">\n        \n        <a class="btn secondary" href="/diplomaturas/1/exportar-asistencia/">Exportar\n            Todo</a>\n        \n        <a class="btn secondary" href="/">Volver</a>\n    </div>\n</div>\n\n<div class="card">\n    <div id="calendar"></div>\n</div>\n\n<!-- FullCalendar -->\n<script src=\'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js\'></script>\n<script>\n    document.addEventListener(\'DOMContentLoaded\', function () {\n        var calendarEl = document.getElementById(\'calendar\');\n        var calendar = new FullCalendar.Calendar(calendarEl, {\n            initialView: \'dayGridMonth\',\n            locale: \'es\',\n            selectable: true,\n            dateClick: function (info) {\n                // Solo si es docente o superior (nivel >= 2)\n                \n                openModal(info.dateStr);\n                \n            },\n            headerToolbar: {\n                left: \'prev,next today\',\n                center: \'title\',\n                right: \'dayGridMonth,timeGridWeek,timeGridDay\'\n            },\n            events: [\n                \n      ],\n    eventClick: function (info) {\n        if (info.event.extendedProps.can_edit) {\n            // Allow default behavior\n        } else {\n            info.jsEvent.preventDefault();\n            openModalDetalle(info.event);\n        }\n    }\n    });\n    calendar.render();\n  });\n</script>\n\n<!-- Modal para elegir materia al crear clase desde calendario -->\n<div id="modal-materia" class="modal"\n    style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">\n    <div class="modal-content"\n        style="background-color: #1e1e1e; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 400px; border-radius: 8px;">\n        <span class="close"\n            style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>\n        <h3>Crear Clase</h3>\n        <p>Seleccion\xc3\xa1 la materia para el d\xc3\xada <span id="modal-fecha-display"></span>:</p>\n        <div style="display: flex; flex-direction: column; gap: 10px;">\n            \n            <p>No ten\xc3\xa9s materias asignadas para crear clases.</p>\n            \n        </div>\n    </div>\n</div>\n\n<!-- Modal Detalle de Clase (para alumnos) -->\n<div id="modal-detalle-clase" class="modal"\n    style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">\n    <div class="modal-content"\n        style="background-color: #1e1e1e; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 8px;">\n        <span class="close-detalle"\n            style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>\n        <h3 id="detalle-titulo"></h3>\n        <p><strong>Horario:</strong> <span id="detalle-horario"></span></p>\n        <p><strong>Tema:</strong> <span id="detalle-tema"></span></p>\n        <p id="detalle-link-container" style="display:none;">\n            <strong>Link/Detalle:</strong> <br>\n            <a id="detalle-link" href="#" target="_blank" style="color: var(--accent2); word-break: break-all;"></a>\n        </p>\n    </div>\n</div>\n\n<script>\n    var selectedDate = null;\n    var modal = document.getElementById("modal-materia"); // Modal de crear clase\n    var span = document.getElementsByClassName("close")[0];\n\n    function openModal(dateStr) {\n        selectedDate = dateStr;\n        document.getElementById("modal-fecha-display").innerText = dateStr;\n        modal.style.display = "block";\n    }\n\n    if (span) {\n        span.onclick = function () {\n            modal.style.display = "none";\n        }\n    }\n\n    function crearClase(materiaId) {\n        // Redirigir a crear clase con la fecha\n        var url = "/materias/0/crear-clase/".replace(\'0\', materiaId);\n        window.location.href = url + "?fecha=" + selectedDate;\n    }\n\n    function openModalDetalle(event) {\n        document.getElementById("detalle-titulo").innerText = event.title;\n        document.getElementById("detalle-horario").innerText = event.extendedProps.hora_inicio + " - " + event.extendedProps.hora_fin;\n        document.getElementById("detalle-tema").innerText = event.extendedProps.tema || "Sin tema especificado";\n\n        var linkContainer = document.getElementById("detalle-link-container");\n        var linkElement = document.getElementById("detalle-link");\n\n        if (event.extendedProps.link_clase) {\n            linkElement.href = event.extendedProps.link_clase;\n            linkElement.innerText = event.extendedProps.link_clase;\n            linkContainer.style.display = "block";\n        } else {\n            linkContainer.style.display = "none";\n        }\n\n        document.getElementById("modal-detalle-clase").style.display = "block";\n    }\n\n    // Close modal logic\n    document.addEventListener(\'DOMContentLoaded\', function () {\n        // Logic for detail modal close\n        var modalDetalle = document.getElementById("modal-detalle-clase");\n        var spanDetalle = document.getElementsByClassName("close-detalle")[0];\n\n        if (spanDetalle) {\n            spanDetalle.onclick = function () {\n                modalDetalle.style.display = "none";\n            }\n        }\n\n        // Logic for create modal close (if clicked outside)\n        var modalCreate = document.getElementById("modal-materia");\n\n        window.onclick = function (event) {\n            if (event.target == modalDetalle) {\n                modalDetalle.style.display = "none";\n            }\n            if (event.target == modalCreate) {\n                modalCreate.style.display = "none";\n            }\n        }\n    });\n</script>\n<style>\n    #calendar {\n        max-width: 100%;\n        margin: 0 auto;\n        font-family: var(--font-family);\n    }\n\n    .fc-event {\n        cursor: pointer;\n    }\n</style>\n\n  </main>\n\n  <footer class="footer">\n    <div class="container">\xc2\xa9 2025</div>\n  </footer>\n</body>\n\n</html>'
+
+----------------------------------------------------------------------
+Ran 5 tests in 106.517s
+
+FAILED (failures=1, errors=1)
+Destroying test database for alias 'default'...
+Found 5 test(s).

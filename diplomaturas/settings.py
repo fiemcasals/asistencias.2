@@ -78,6 +78,7 @@ MIDDLEWARE = [ #los middlewares son componentes que procesan las solicitudes y r
     'django.middleware.clickjacking.XFrameOptionsMiddleware',#protege contra ataques de clickjacking
     #los ataques de clickjacking son un tipo de ataque donde un usuario es engañado para hacer clic en algo diferente a lo que el usuario percibe, potencialmente revelando informacion confidencial o permitiendo el control de su computadora mientras interactua con una aplicacion web aparentemente inofensiva
     "allauth.account.middleware.AccountMiddleware",
+    'asistencias.middleware.RoleSwitchMiddleware',
     #deploy:
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",  # antes de CommonMiddleware

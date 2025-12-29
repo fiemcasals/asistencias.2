@@ -1,0 +1,65 @@
+from django.test import TestCase, Client
+from django.contrib.auth import get_user_model
+from asistencias.models import Diplomatura, Materia, InscripcionDiplomatura, Clase, Asistencia
+from django.urls import reverse
+from datetime import date, time, datetime
+
+User = get_user_model()
+
+class RoleTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        
+        # Create users
+        self.supervisor = User.objects.create_user(email='sup@test.com', password='password', nivel=7, first_name='Super', last_name='Visor', dni='111')
+        self.referente = User.objects.create_user(email='ref@test.com', password='password', nivel=6, first_name='Ref', last_name='Erente', dni='222')
+        self.alumno = User.objects.create_user(email='alu@test.com', password='password', nivel=1, first_name='Alu', last_name='Mno', dni='333')
+        
+        # Create data
+        self.diplo = Diplomatura.objects.create(nombre='Diplo Test', codigo='DT1')
+        self.materia = Materia.objects.create(diplomatura=self.diplo, nombre='Mat 1', codigo='M1')
+        self.clase = Clase.objects.create(materia=self.materia, fecha=date.today(), hora_inicio=datetime.now(), hora_fin=datetime.now(), tema='Tema 1')
+        
+        # Register Referente
+        InscripcionDiplomatura.objects.create(user=self.referente, diplomatura=self.diplo)
+        
+    def test_supervisor_switch_role(self):
+        self.client.login(email='sup@test.com', password='password')
+        
+        # Initial check: should be level 7
+        response = self.client.get(reverse('asistencias:home'))
+        self.assertEqual(response.wsgi_request.user.nivel, 7)
+        
+        # Switch to Alumno (1)
+        response = self.client.get(reverse('asistencias:switch_role', args=[1]))
+        self.assertEqual(response.status_code, 302)
+        
+        # Check if session has the role
+        self.assertEqual(self.client.session['impersonate_role'], 1)
+        
+        # Check if middleware applies it
+        response = self.client.get(reverse('asistencias:home'))
+        self.assertEqual(response.wsgi_request.user.nivel, 1)
+        
+    def test_referente_dashboard_access(self):
+        self.client.login(email='ref@test.com', password='password')
+        response = self.client.get(reverse('asistencias:referente_dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Diplo Test')
+        
+    def test_referente_calendar_access(self):
+        self.client.login(email='ref@test.com', password='password')
+        response = self.client.get(reverse('asistencias:calendario_referente', args=[self.diplo.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'stats') # Should contain stats in the template context/js
+        
+    def test_referente_export_access(self):
+        self.client.login(email='ref@test.com', password='password')
+        response = self.client.get(reverse('asistencias:exportar_asistencia_diplomatura', args=[self.diplo.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+    def test_alumno_cannot_access_referente_views(self):
+        self.client.login(email='alu@test.com', password='password')
+        response = self.client.get(reverse('asistencias:referente_dashboard'))
+        self.assertNotEqual(response.status_code, 200) # Should be forbidden or redirect

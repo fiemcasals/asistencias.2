@@ -4,7 +4,13 @@
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
     <h1>Calendario · {{ diplomatura.nombre }}</h1>
-    <a class="btn secondary" href="{% url 'asistencias:home' %}">Volver</a>
+    <div style="display: flex; gap: 10px;">
+        {% if es_referente %}
+        <a class="btn secondary" href="{% url 'asistencias:exportar_asistencia_diplomatura' diplomatura.id %}">Exportar
+            Todo</a>
+        {% endif %}
+        <a class="btn secondary" href="{% url 'asistencias:home' %}">Volver</a>
+    </div>
 </div>
 
 <div class="card">
@@ -44,19 +50,20 @@
         link_clase: "{{ e.link_clase|escapejs }}",
         tema: "{{ e.tema|escapejs }}",
         hora_inicio: "{{ e.hora_inicio }}",
-        hora_fin: "{{ e.hora_fin }}"
+        hora_fin: "{{ e.hora_fin }}",
+        stats: {% if e.stats %}{ presentes: { { e.stats.presentes } }, inscriptos: { { e.stats.inscriptos } } } {% else %} null{% endif %}
           }
         },
-        {% endfor %}
+    {% endfor %}
       ],
-        eventClick: function (info) {
-            if (info.event.extendedProps.can_edit) {
-                // Allow default behavior
-            } else {
-                info.jsEvent.preventDefault();
-                openModalDetalle(info.event);
-            }
+    eventClick: function (info) {
+        if (info.event.extendedProps.can_edit) {
+            // Allow default behavior
+        } else {
+            info.jsEvent.preventDefault();
+            openModalDetalle(info.event);
         }
+    }
     });
     calendar.render();
   });

@@ -43,11 +43,17 @@ urlpatterns = [
     #desincribirse de una materia
     path('materias/<int:materia_id>/desinscribirse/', views.desinscribirse_materia, name='desinscribirse_materia'),
 
-    #exportar datos
+    # Referente Municipal / nivel 6
+    path('referente/dashboard/', views.dashboard, name='referente_dashboard'),
+    path('referente/diplomaturas/<int:diplomatura_id>/calendario/', views.calendario_referente, name='calendario_referente'),
+    
+    # Supervisor / nivel 7
+    path('supervisor/switch-role/<int:role_id>/', views.switch_role, name='switch_role'),
+
+    # Exportar datos
     path('exportar/xlsx/', views.exportar_xlsx, name='exportar_xlsx'),
     path('materias/<int:materia_id>/exportar-asistencia/', views.exportar_asistencia_materia, name='exportar_asistencia_materia'),
-
-    path('materias/<int:materia_id>/exportar-asistencia/', views.exportar_asistencia_materia, name='exportar_asistencia_materia'),
+    path('diplomaturas/<int:diplomatura_id>/exportar-asistencia/', views.exportar_asistencia_diplomatura, name='exportar_asistencia_diplomatura'),
 
     # Notas
     path('materias/<int:materia_id>/notas/', views.cargar_notas, name='cargar_notas'),
