@@ -5,15 +5,17 @@
 
 {% if request.user.nivel|default:1 >= 2 or can_manage %}
 <div class="actions">
-  {% if can_manage %}
+  {% if can_manage and request.user.nivel != 6 %}
   <a class="btn" href="{% url 'asistencias:crear_clase' materia.id %}">+ Crear clase</a>
   <a class="btn" href="{% url 'asistencias:listado_presentes' materia.id %}">Ver presentes/ausentes</a>
   <a class="btn" href="{% url 'asistencias:token_adjunto' materia.id %}">Generar token adjunto</a>
   {% endif %}
 
   {% if can_manage %}
+  {% if request.user.nivel != 6 %}
   <a class="btn" href="{% url 'asistencias:cargar_notas' materia.id %}">Cargar Notas</a>
   <a class="btn" href="{% url 'asistencias:promedios_materia' materia.id %}">Promedios</a>
+  {% endif %}
   <a class="btn" href="{% url 'asistencias:exportar_asistencia_materia' materia.id %}">Exportar Asistencia</a>
   {% endif %}
 </div>

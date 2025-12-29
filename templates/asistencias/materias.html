@@ -27,7 +27,7 @@
       <td>{{ m.nombre }}</td>
       <td>
         <a class="btn" href="{% url 'asistencias:ver_clases' m.id %}">Ver clases</a>
-        {% if request.user.nivel >= 2 %}
+        {% if request.user.nivel >= 2 and request.user.nivel != 6 %}
         <a class="btn" href="{% url 'asistencias:cargar_notas' m.id %}">Cargar Notas</a>
         <a class="btn" href="{% url 'asistencias:promedios_materia' m.id %}">Promedios</a>
         {% endif %}
