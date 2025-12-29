@@ -98,7 +98,7 @@ def home(request):
 
     # Materias donde el usuario puede crear clases (para el modal del calendario)
     materias_creables = []
-    if request.user.is_authenticated and (request.user.nivel >= 2):
+    if request.user.is_authenticated and (request.user.nivel >= 2) and (request.user.nivel != 6):
         # Titular o profesor adjunto
         materias_creables = Materia.objects.filter(
             models.Q(profesor_titular=request.user) |
@@ -272,7 +272,7 @@ def calendario_diplomatura(request, diplomatura_id):
 
     # Materias donde el usuario puede crear clases (para el modal del calendario)
     materias_creables = []
-    if request.user.is_authenticated and (request.user.nivel >= 2):
+    if request.user.is_authenticated and (request.user.nivel >= 2) and (request.user.nivel != 6):
         # Titular o profesor adjunto
         materias_creables = Materia.objects.filter(
             models.Q(profesor_titular=request.user) |
