@@ -1,4 +1,5 @@
 # Re-exporta las vistas para mantener compatibilidad con "from . import views" en urls.py
+from .alumno import (
     home, perfil, listar_diplomaturas, listar_materias,
     insc_diplomatura_por_codigo, insc_materia_por_codigo,
     ver_clases_materia, marcar_presente, desinscribirse_materia,
