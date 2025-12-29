@@ -74,6 +74,9 @@ def home(request):
         
         for c in clases:
             es_profe_de_esta = c.materia_id in materias_profe
+            if request.user.nivel == 6:
+                 es_profe_de_esta = False
+
             eventos.append({
                 'title': f"{c.materia.nombre} ({c.hora_inicio.strftime('%H:%M')})",
                 'start': c.fecha.isoformat(),
@@ -249,6 +252,9 @@ def calendario_diplomatura(request, diplomatura_id):
 
     for c in clases:
         es_profe_de_esta = c.materia_id in materias_profe
+        if request.user.nivel == 6:
+             es_profe_de_esta = False
+
         eventos.append({
             'title': f"{c.materia.nombre} ({c.hora_inicio.strftime('%H:%M')})",
             'start': c.fecha.isoformat(),

@@ -88,6 +88,14 @@ class RoleTests(TestCase):
         # Load Grades
         response = self.client.get(reverse('asistencias:cargar_notas', args=[self.materia.id]))
         self.assertEqual(response.status_code, 403)
+        
+        # Edit Class
+        response = self.client.get(reverse('asistencias:editar_clase', args=[self.clase.id]))
+        self.assertEqual(response.status_code, 403)
+        
+        # Delete Class
+        response = self.client.get(reverse('asistencias:eliminar_clase', args=[self.clase.id]))
+        self.assertEqual(response.status_code, 403)
 
     def test_alumno_cannot_access_referente_views(self):
         self.client.login(email='alu@test.com', password='password')

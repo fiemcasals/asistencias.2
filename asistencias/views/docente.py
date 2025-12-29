@@ -109,6 +109,8 @@ def crear_clase(request, materia_id):
 
 @requiere_nivel(2)
 def editar_clase(request, clase_id):
+    if request.user.nivel == 6:
+        return HttpResponseForbidden("No tenés permisos para editar clases.")
     clase = get_object_or_404(Clase, id=clase_id)
     materia = clase.materia
     
@@ -130,6 +132,8 @@ def editar_clase(request, clase_id):
 
 @requiere_nivel(2)
 def eliminar_clase(request, clase_id):
+    if request.user.nivel == 6:
+        return HttpResponseForbidden("No tenés permisos para eliminar clases.")
     clase = get_object_or_404(Clase, id=clase_id)
     materia = clase.materia
     
