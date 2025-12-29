@@ -97,6 +97,29 @@ class RoleTests(TestCase):
         response = self.client.get(reverse('asistencias:eliminar_clase', args=[self.clase.id]))
         self.assertEqual(response.status_code, 403)
 
+    def test_referente_cannot_see_create_class_modal(self):
+        self.client.login(email='ref@test.com', password='password')
+        response = self.client.get(reverse('asistencias:home'))
+        self.assertEqual(response.status_code, 200)
+        # Verify materias_creables is empty in context
+        self.assertIn('materias_creables', response.context)
+        self.assertEqual(len(response.context['materias_creables']), 0)
+
+    def test_referente_navigation_link(self):
+        self.client.login(email='ref@test.com', password='password')
+        response = self.client.get(reverse('asistencias:home'))
+        self.assertContains(response, reverse('asistencias:insc_diplomatura_codigo'))
+        self.assertNotContains(response, reverse('asistencias:insc_materia_codigo'))
+
+    def test_referente_calendar_stats(self):
+        self.client.login(email='ref@test.com', password='password')
+        response = self.client.get(reverse('asistencias:calendario_referente', args=[self.diplo.id]))
+        self.assertEqual(response.status_code, 200)
+        # Check if stats are in the event props (implicitly checked by response content or context)
+        # Since stats are rendered in template JS, we check for presence of 'stats' string in response
+        self.assertContains(response, 'stats:')
+        self.assertContains(response, 'presentes:')
+
     def test_alumno_cannot_access_referente_views(self):
         self.client.login(email='alu@test.com', password='password')
         response = self.client.get(reverse('asistencias:referente_dashboard'))

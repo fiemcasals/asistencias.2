@@ -21,7 +21,12 @@
           {% if request.user.is_authenticated %}
           <!-- <a href="{% url 'asistencias:publico' %}">Dar Presente</a> -->
           <a href="{% url 'asistencias:consulta_publica' %}">Consultar</a>
+          <a href="{% url 'asistencias:consulta_publica' %}">Consultar</a>
+          {% if request.user.nivel == 6 %}
+          <a href="{% url 'asistencias:insc_diplomatura_codigo' %}">Inscribirse a diplomatura</a>
+          {% else %}
           <a href="{% url 'asistencias:insc_materia_codigo' %}">Inscribirse a materia</a>
+          {% endif %}
           <a href="{% url 'asistencias:usar_token' %}">Canjear Token</a>
 
 
@@ -69,7 +74,7 @@
             }
             // Close if clicked outside
             window.onclick = function (event) {
-              if (!event.target.matches('.btn-icon')) {
+              if (!event.target.matches(".btn-icon")) {
                 var dropdowns = document.getElementsByClassName("dropdown-content");
                 for (var i = 0; i < dropdowns.length; i++) {
                   var openDropdown = dropdowns[i];

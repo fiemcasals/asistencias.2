@@ -5,7 +5,7 @@
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
     <h1>Calendario · {{ diplomatura.nombre }}</h1>
     <div style="display: flex; gap: 10px;">
-        {% if es_referente %}
+        {% if es_referente or request.user.nivel >= 3 %}
         <a class="btn secondary" href="{% url 'asistencias:exportar_asistencia_diplomatura' diplomatura.id %}">Exportar
             Todo</a>
         {% endif %}
@@ -98,6 +98,11 @@
         <h3 id="detalle-titulo"></h3>
         <p><strong>Horario:</strong> <span id="detalle-horario"></span></p>
         <p><strong>Tema:</strong> <span id="detalle-tema"></span></p>
+        <div id="detalle-stats"
+            style="display:none; margin-top: 10px; padding: 10px; background-color: #333; border-radius: 5px;">
+            <p style="margin:0;"><strong>Presentes:</strong> <span id="stats-presentes"></span></p>
+            <p style="margin:0;"><strong>Inscriptos:</strong> <span id="stats-inscriptos"></span></p>
+        </div>
         <p id="detalle-link-container" style="display:none;">
             <strong>Link/Detalle:</strong> <br>
             <a id="detalle-link" href="#" target="_blank" style="color: var(--accent2); word-break: break-all;"></a>
@@ -132,6 +137,15 @@
         document.getElementById("detalle-titulo").innerText = event.title;
         document.getElementById("detalle-horario").innerText = event.extendedProps.hora_inicio + " - " + event.extendedProps.hora_fin;
         document.getElementById("detalle-tema").innerText = event.extendedProps.tema || "Sin tema especificado";
+
+        var statsDiv = document.getElementById("detalle-stats");
+        if (event.extendedProps.stats) {
+            document.getElementById("stats-presentes").innerText = event.extendedProps.stats.presentes;
+            document.getElementById("stats-inscriptos").innerText = event.extendedProps.stats.inscriptos;
+            statsDiv.style.display = "block";
+        } else {
+            statsDiv.style.display = "none";
+        }
 
         var linkContainer = document.getElementById("detalle-link-container");
         var linkElement = document.getElementById("detalle-link");
