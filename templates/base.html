@@ -38,7 +38,7 @@
 
         {% if request.user.is_authenticated %}
         <div class="nav-right" style="display: flex; align-items: center; gap: 15px;">
-          {% if request.user.nivel == 7 %}
+          {% if request.user.nivel == 7 or request.session.impersonate_role %}
           <div class="dropdown" style="position: relative; display: inline-block;">
             <button class="btn-icon" onclick="toggleDropdown()"
               style="background:none; border:none; color:white; font-size: 1.2rem; cursor: pointer;">
