@@ -7,8 +7,6 @@
   <div style="display: flex; gap: 10px;">
     {% if request.user.nivel >= 3 and request.user.nivel != 6 %}
     <a class="btn" href="{% url 'asistencias:crear_diplomatura' %}">+ Nueva Diplomatura</a>
-    {% endif %}
-    {% if request.user.nivel >= 2 and request.user.nivel != 6 %}
     <a class="btn" href="{% url 'asistencias:crear_materia' %}">+ Nueva Materia</a>
     {% endif %}
   </div>
@@ -25,7 +23,6 @@
   <div id="calendar"></div>
 </div>
 
-<!-- FullCalendar -->
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
@@ -35,202 +32,77 @@
     var calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: 'dayGridMonth',
       locale: 'es',
-      selectable: true,
-      dateClick: function (info) {
-        // Solo si es Coordinador (nivel 3) y tiene materias
-        {% if request.user.nivel == 3 and materias_creables %}
-        openModal(info.dateStr);
-        {% endif %}
-      },
       headerToolbar: {
         left: isMobile ? 'prev,next' : 'prev,next today',
         center: 'title',
         right: isMobile ? 'dayGridMonth,timeGridDay' : 'dayGridMonth,timeGridWeek,timeGridDay'
       },
       height: 'auto',
-      contentHeight: 'auto',
       aspectRatio: isMobile ? 0.8 : 1.35,
       events: [
         {% for e in eventos %}
         {
-        title: "{{ e.title }}",
-        start: "{{ e.start }}",
-        url: "{% if e.can_edit %}{% url 'asistencias:editar_clase' e.id %}{% else %}#{% endif %}",
-        color: "{{ e.color }}",
-        extendedProps: {
-          materia_id: "{{ e.materia_id }}",
-          can_edit: {% if e.can_edit %}true{% else %}false{% endif %},
-    link_clase: "{{ e.link_clase|escapejs }}",
-    tema: "{{ e.tema|escapejs }}",
-    hora_inicio: "{{ e.hora_inicio }}",
-    hora_fin: "{{ e.hora_fin }}"
+          title: "{{ e.title|escapejs }}",
+          start: "{{ e.start }}",
+          color: "{{ e.color }}",
+          extendedProps: {
+            clase_id: "{{ e.id }}",
+            tema: "{{ e.extendedProps.tema|escapejs }}",
+            hora_inicio: "{{ e.extendedProps.hora_inicio }}",
+            hora_fin: "{{ e.extendedProps.hora_fin }}"
           }
         },
-    {% endfor %}
+        {% endfor %}
       ],
-    eventClick: function (info) {
-      if (info.event.extendedProps.can_edit) {
-        // Allow default behavior (navigate to URL)
-      } else {
-        info.jsEvent.preventDefault(); // Don't navigate if student
-        openModalDetalle(info.event);
+      eventClick: function(info) {
+        info.jsEvent.preventDefault(); 
+        var props = info.event.extendedProps;
+        document.getElementById("detalle-titulo").innerText = info.event.title;
+        document.getElementById("detalle-horario").innerText = (props.hora_inicio || "--:--") + " a " + (props.hora_fin || "--:--");
+        document.getElementById("detalle-tema").innerText = props.tema || "Sin tema especificado";
+
+        var btnEditarContainer = document.getElementById("contenedor-boton-editar");
+        if ({{ request.user.nivel }} >= 2) {
+            var urlEditar = "{% url 'asistencias:editar_clase' 0 %}".replace('0', props.clase_id);
+            btnEditarContainer.innerHTML = `<a href="${urlEditar}" class="btn" style="background-color: #f39c12; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold;">Editar Tema</a>`;
+            btnEditarContainer.style.display = "inline-block";
+        } else {
+            btnEditarContainer.style.display = "none";
+        }
+        document.getElementById("modal-detalle-clase").style.display = "block";
       }
-    },
-    windowResize: function (view) {
-      if (window.innerWidth < 768) {
-        calendar.setOption('headerToolbar', {
-          left: 'prev,next',
-          center: 'title',
-          right: 'dayGridMonth,timeGridDay'
-        });
-        calendar.setOption('aspectRatio', 0.8);
-      } else {
-        calendar.setOption('headerToolbar', {
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,timeGridWeek,timeGridDay'
-        });
-        calendar.setOption('aspectRatio', 1.35);
-      }
-    }
     });
-  calendar.render();
+    calendar.render();
   });
 </script>
-<style>
-  #calendar {
-    max-width: 100%;
-    margin: 0 auto;
-    font-family: var(--font-family);
-  }
-
-  .fc-event {
-    cursor: pointer;
-  }
-
-  /* Mobile adjustments for calendar */
-  @media (max-width: 768px) {
-    .fc-toolbar {
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .fc-toolbar-title {
-      font-size: 1.2em !important;
-    }
-  }
-</style>
 {% endif %}
 
-<!-- Modal para elegir materia al crear clase desde calendario -->
-<div id="modal-materia" class="modal"
-  style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
-  <div class="modal-content"
-    style="background-color: #1e1e1e; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 400px; border-radius: 8px;">
-    <span class="close"
-      style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
-    <h3>Crear Clase</h3>
-    <p>Seleccioná la materia para el día <span id="modal-fecha-display"></span>:</p>
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-      {% for m in materias_creables %}
-      <button class="btn secondary" onclick="crearClase('{{ m.id }}')">{{ m.nombre }}</button>
-      {% empty %}
-      <p>No tenés materias asignadas para crear clases.</p>
-      {% endfor %}
+<div id="modal-detalle-clase" class="modal" style="display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6);">
+  <div class="modal-content" style="background-color: #1e1e1e; margin: 10% auto; padding: 25px; border: 1px solid var(--accent); width: 90%; max-width: 500px; border-radius: 12px;">
+    <span onclick="document.getElementById('modal-detalle-clase').style.display='none'" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+    <h2 id="detalle-titulo" style="color: var(--accent2);"></h2>
+    <p><strong>🕒 Horario:</strong> <span id="detalle-horario"></span></p>
+    <p><strong>📝 Tema:</strong> <br><span id="detalle-tema" style="color: #ccc;"></span></p>
+    <div style="margin-top: 25px; display: flex; justify-content: flex-end; gap: 12px;">
+        <div id="contenedor-boton-editar"></div>
+        <button class="btn secondary small" onclick="document.getElementById('modal-detalle-clase').style.display='none'">Cerrar</button>
     </div>
   </div>
 </div>
 
-<script>
-  var selectedDate = null;
-  var modal = document.getElementById("modal-materia");
-  var modalDetalle = document.getElementById("modal-detalle-clase"); // Nuevo modal
-  var span = document.getElementsByClassName("close")[0];
-  var spanDetalle = document.getElementsByClassName("close-detalle")[0]; // Nuevo span
-
-  function openModal(dateStr) {
-    selectedDate = dateStr;
-    document.getElementById("modal-fecha-display").innerText = dateStr;
-    modal.style.display = "block";
-  }
-
-  function openModalDetalle(event) {
-    document.getElementById("detalle-titulo").innerText = event.title;
-    document.getElementById("detalle-horario").innerText = event.extendedProps.hora_inicio + " - " + event.extendedProps.hora_fin;
-    document.getElementById("detalle-tema").innerText = event.extendedProps.tema || "Sin tema especificado";
-
-    var linkContainer = document.getElementById("detalle-link-container");
-    var linkElement = document.getElementById("detalle-link");
-
-    if (event.extendedProps.link_clase) {
-      linkElement.href = event.extendedProps.link_clase;
-      linkElement.innerText = event.extendedProps.link_clase;
-      linkContainer.style.display = "block";
-    } else {
-      linkContainer.style.display = "none";
-    }
-
-    modalDetalle.style.display = "block";
-  }
-
-  span.onclick = function () {
-    modal.style.display = "none";
-  }
-
-  if (spanDetalle) {
-    spanDetalle.onclick = function () {
-      modalDetalle.style.display = "none";
-    }
-  }
-
-  window.onclick = function (event) {
-    if (event.target == modal) {
-      modal.style.display = "none";
-    }
-    if (event.target == modalDetalle) {
-      modalDetalle.style.display = "none";
-    }
-  }
-
-  function crearClase(materiaId) {
-    // Redirigir a crear clase con la fecha
-    var url = "{% url 'asistencias:crear_clase' 0 %}".replace('0', materiaId);
-    window.location.href = url + "?fecha=" + selectedDate;
-  }
-</script>
-
-<!-- Modal Detalle de Clase (para alumnos) -->
-<div id="modal-detalle-clase" class="modal"
-  style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
-  <div class="modal-content"
-    style="background-color: #1e1e1e; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 8px;">
-    <span class="close-detalle"
-      style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
-    <h3 id="detalle-titulo"></h3>
-    <p><strong>Horario:</strong> <span id="detalle-horario"></span></p>
-    <p><strong>Tema:</strong> <span id="detalle-tema"></span></p>
-    <p id="detalle-link-container" style="display:none;">
-      <strong>Link/Detalle:</strong> <br>
-      <a id="detalle-link" href="#" target="_blank" style="color: var(--accent2); word-break: break-all;"></a>
-    </p>
-  </div>
-</div>
-{% endif %}
-
-<h2>Diplomaturas</h2>
-
+<h2 style="margin-top: 40px;">Diplomaturas</h2>
 <div class="grid">
   {% for d in diplomaturas %}
   <div class="card">
     <h3>{{ d.nombre }}</h3>
     <p class="muted">Código: {{ d.codigo }}</p>
-    <p><a class="btn secondary small" href="{% url 'asistencias:calendario_diplomatura' d.id %}">📅 Ver Calendario</a>
-    </p>
-
+    {% if not solo_una_diplo %}
+    <p><a class="btn secondary small" href="{% url 'asistencias:calendario_diplomatura' d.id %}">📅 Ver Calendario</a></p>
+    {% endif %}
     <ul>
       {% for m in d.materias.all %}
       <li>
-        {{ m.nombre }} — <a href="{% url 'asistencias:ver_clases' m.id %}">ver clases</a>
+        {{ m.nombre }} — <a href="{% url 'asistencias:ver_clases' m.id %}">ver materia</a>
       </li>
       {% endfor %}
     </ul>
@@ -239,5 +111,5 @@
   <p>No tenés diplomaturas asignadas.</p>
   {% endfor %}
 </div>
-
+{% endif %}
 {% endblock %}

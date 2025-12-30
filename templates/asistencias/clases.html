@@ -1,57 +1,61 @@
 {% extends 'base.html' %}
-{% block title %}Clases{% endblock %}
+{% block title %}Materia: {{ materia.nombre }}{% endblock %}
+
 {% block content %}
-<h1>{{ materia.diplomatura.nombre }} · {{ materia.nombre }}</h1>
+<div class="container">
+    <h1>{{ materia.diplomatura.nombre }} · {{ materia.nombre }}</h1>
 
-{% if request.user.nivel|default:1 >= 2 or can_manage %}
-<div class="actions">
-  {% if can_manage and request.user.nivel != 6 %}
-  <a class="btn" href="{% url 'asistencias:crear_clase' materia.id %}">+ Crear clase</a>
-  <a class="btn" href="{% url 'asistencias:listado_presentes' materia.id %}">Ver presentes/ausentes</a>
-  <a class="btn" href="{% url 'asistencias:token_adjunto' materia.id %}">Generar token adjunto</a>
-  {% endif %}
-
-  {% if can_manage %}
-  {% if request.user.nivel != 6 %}
-  <a class="btn" href="{% url 'asistencias:cargar_notas' materia.id %}">Cargar Notas</a>
-  <a class="btn" href="{% url 'asistencias:promedios_materia' materia.id %}">Promedios</a>
-  {% endif %}
-  <a class="btn" href="{% url 'asistencias:exportar_asistencia_materia' materia.id %}">Exportar Asistencia</a>
-  {% endif %}
+{% if request.user.nivel >= 2 and request.user.nivel != 6 %}
+<div class="card" style="border-left: 5px solid var(--accent); background: rgba(255,255,255,0.05); padding: 20px; margin-bottom: 20px;">
+    <h3 style="margin-top:0">Panel de Gestión</h3>
+    <div class="actions">
+        <a class="btn" href="{% url 'asistencias:listado_presentes' materia.id %}">📋 Listado Asistencia</a>
+        <a class="btn" href="{% url 'asistencias:ver_notas_materia' materia.id %}">📝 Notas Alumnos</a>
+        <a class="btn" href="{% url 'asistencias:promedios_materia' materia.id %}">📊 Ver Promedios</a>
+        <a class="btn" href="{% url 'asistencias:cargar_notas' materia.id %}">📝 Cargar Notas</a>
+        <a class="btn secondary" href="{% url 'asistencias:exportar_asistencia_materia' materia.id %}">📥 Exportar CSV</a>
+    </div>
 </div>
 {% endif %}
 
-{% if request.user.nivel == 1 %}
-<div class="actions">
-  <a class="btn" href="{% url 'asistencias:mis_notas' %}">Mis Notas</a>
-</div>
-{% endif %}
+    {% if es_alumno %}
+    <div class="actions">
+        <a class="btn" href="{% url 'asistencias:mis_notas' %}">Mis Notas</a>
+    </div>
+    {% endif %}
 
-{% for c in clases %}
-<div class="card">
-  <h3>{{ c.fecha }} — {{ c.hora_inicio }}–{{ c.hora_fin }}</h3>
-  {% if c.link_clase %}
-  <p style="margin-top: 5px; font-size: 0.9em;">
-    🔗 <a href="{{ c.link_clase }}" target="_blank" rel="noopener noreferrer">{{ c.link_clase|truncatechars:50 }}</a>
-  </p>
-  {% endif %}
-  {% if c.ventana_activa %}
-  <a class="btn" href="{% url 'asistencias:marcar_presente' c.id %}">Dar presente</a>
-  {% else %}
-  <span class="badge">Fuera de horario</span>
-  {% endif %}
-</div>
-{% empty %}
-<p><em>Sin clases.</em></p>
-{% endfor %}
-{% if request.user.is_authenticated %}
-{% if not es_docente %}
-<form method="post" action="{% url 'asistencias:desinscribirse_materia' materia.id %}" style="display:inline"
-  onsubmit="return confirm('¿Seguro que querés desinscribirte?');">
-  {% csrf_token %}
-  <button class="btn danger" type="submit">Desinscribirme</button>
-</form>
-{% endif %}
-{% endif %}
+    <h2>Cronograma</h2>
+    {% for c in clases %}
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 style="margin:0">{{ c.fecha|date:"d/m/Y" }} — {{ c.hora_inicio|date:"H:i" }}</h3>
+                <p><strong>Tema:</strong> {{ c.tema|default:"Sin tema" }}</p>
+            </div>
+            
+            <div class="actions">
+                {% if can_manage %}
+                    <a class="btn small secondary" href="{% url 'asistencias:ver_asistencia_clase' c.id %}">👁️ Ver</a>
+                    <a class="btn small" href="{% url 'asistencias:editar_clase' c.id %}">✏️</a>
+                {% endif %}
 
+                {% if es_alumno and c.ventana_activa %}
+                    <a class="btn" href="{% url 'asistencias:marcar_presente' c.id %}">Dar presente</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p><em>Sin clases programadas.</em></p>
+    {% endfor %}
+
+    {% if es_alumno %}
+    <hr>
+    <form method="post" action="{% url 'asistencias:desinscribirse_materia' materia.id %}" 
+          onsubmit="return confirm('¿Seguro que querés desinscribirte?');">
+        {% csrf_token %}
+        <button class="btn danger" type="submit">Desinscribirme de la materia</button>
+    </form>
+    {% endif %}
+</div>
 {% endblock %}

@@ -16,11 +16,12 @@ def home(request):
     diplomaturas = Diplomatura.objects.none()
     eventos = []
     materias_creables = []
+    solo_una_diplo = False
 
     if request.user.is_authenticated:
         u = request.user
 
-        # Diplomaturas por rol
+        # 1. Filtrado de Diplomaturas según el rol
         dips_alumno = Diplomatura.objects.filter(
             models.Q(inscripciones__user=u) | 
             models.Q(materias__inscripciones__user=u)
@@ -31,7 +32,6 @@ def home(request):
         )
         dips_coord = Diplomatura.objects.filter(coordinadores=u)
 
-        # Combinamos según nivel
         if u.nivel >= 3:
             qs = (dips_alumno | dips_docente | dips_coord)
         elif u.nivel >= 2:
@@ -40,62 +40,68 @@ def home(request):
             qs = dips_alumno
 
         diplomaturas = qs.distinct().prefetch_related('materias')
+        
+        solo_una_diplo = diplomaturas.count() == 1
 
-        # Materias para el Calendario
-        if u.nivel >= 3:
-            # Coordinador ve sus materias Y todas las de las diplomaturas que coordina
+        # 2. Paleta de colores
+        COLORES_PALETA = ['#4CAF50', '#2196F3', '#FF9800', '#E91E63', '#9C27B0', '#00BCD4']
+        diplo_ids_list = list(diplomaturas.values_list('id', flat=True))
+        color_map = {d_id: COLORES_PALETA[i % len(COLORES_PALETA)] for i, d_id in enumerate(diplo_ids_list)}
+
+        # 3. Materias para el Calendario
+        if u.nivel >= 4 or getattr(u, 'is_superuser', False):
+            mats_ids = Materia.objects.filter(Q(diplomatura__in=diplomaturas)).values_list('id', flat=True)
+        elif u.nivel >= 3:
             mats_ids = Materia.objects.filter(
-                models.Q(profesores__user=u) |
-                models.Q(profesor_titular=u) |
-                models.Q(diplomatura__coordinadores=u)
+                Q(profesores__user=u) | Q(profesor_titular=u) | Q(diplomatura__coordinadores=u)
             ).values_list('id', flat=True)
         else:
             mats_ids = Materia.objects.filter(
-                models.Q(inscripciones__user=u) |
-                models.Q(profesores__user=u) |
-                models.Q(profesor_titular=u)
+                Q(inscripciones__user=u) | Q(profesores__user=u) | Q(profesor_titular=u)
             ).values_list('id', flat=True)
 
-        # Cache de permisos de edición
+        # 4. Procesar Clases
         materias_donde_es_profe = set(ProfesorMateria.objects.filter(user=u).values_list('materia_id', flat=True))
         materias_donde_es_profe.update(Materia.objects.filter(profesor_titular=u).values_list('id', flat=True))
-        # El coordinador puede editar cualquier materia de su diplomatura
         materias_coordinadas = set(Materia.objects.filter(diplomatura__coordinadores=u).values_list('id', flat=True))
+        materias_inscripto = set(InscripcionMateria.objects.filter(user=u).values_list('materia_id', flat=True))
 
-        clases = Clase.objects.filter(materia_id__in=mats_ids).select_related('materia')
-        
+        clases = Clase.objects.filter(materia_id__in=mats_ids).select_related('materia', 'materia__diplomatura')
         for c in clases:
-            # Lógica de edición: Solo nivel >= 3 puede cambiar horarios. Nivel 2 solo tema/comentario.
-            # En el calendario ponemos can_edit si tiene algún permiso de edición
             es_coord_de_esta = c.materia_id in materias_coordinadas
             es_profe_de_esta = c.materia_id in materias_donde_es_profe
-            
-            can_edit = (es_coord_de_esta or es_profe_de_esta) and u.nivel != 6
+            es_alumno_de_esta = c.materia_id in materias_inscripto
+            es_supervisor = u.nivel >= 4 or u.is_superuser
 
+            can_edit = (es_coord_de_esta or es_profe_de_esta) and u.nivel != 6
+            can_access = es_supervisor or es_coord_de_esta or es_profe_de_esta or es_alumno_de_esta
+            color_evento = color_map.get(c.materia.diplomatura_id, '#888')
+
+            # --- ESTO ES LO QUE DEBES ASEGURARTE QUE ESTÉ ASÍ ---
             eventos.append({
-                'title': f"{c.materia.nombre} ({c.hora_inicio.strftime('%H:%M')})",
+                'title': f"{c.materia.nombre}",
                 'start': c.fecha.isoformat(),
                 'id': c.id,
                 'materia_id': c.materia.id,
-                'color': '#4CAF50' if c.ventana_activa() else '#888',
+                'color': color_evento,
                 'can_edit': can_edit,
-                'link_clase': c.link_clase,
-                'tema': c.tema,
-                'hora_inicio': c.hora_inicio.strftime('%H:%M'),
-                'hora_fin': c.hora_fin.strftime('%H:%M'),
+                'can_access': can_access,
+                'extendedProps': {
+                    'tema': c.tema or "Sin tema especificado",
+                    'link_clase': c.link_clase or "",
+                    'hora_inicio': c.hora_inicio.strftime('%H:%M') if c.hora_inicio else "",
+                    'hora_fin': c.hora_fin.strftime('%H:%M') if c.hora_fin else "",
+                }
             })
-
-        # Materias donde puede CREAR nuevas clases (Solo Coordinadores nivel 3+)
         if u.nivel >= 3:
             materias_creables = Materia.objects.filter(diplomatura__coordinadores=u).distinct()
-
-    mostrar_calendario_general = request.user.is_authenticated and (request.user.nivel >= 3 or diplomaturas.count() > 1)
 
     return render(request, 'asistencias/home.html', {
         'diplomaturas': diplomaturas,
         'eventos': eventos,
-        'mostrar_calendario_general': mostrar_calendario_general,
+        'mostrar_calendario_general': request.user.is_authenticated,
         'materias_creables': materias_creables,
+        'solo_una_diplo': solo_una_diplo,
     })
 
 @requiere_nivel(1)
@@ -118,18 +124,20 @@ def listar_diplomaturas(request):
 @requiere_nivel(1)
 def listar_materias(request):
     u = request.user
-    base = (Materia.objects.select_related('diplomatura')
+    base = (Materia.objects.select_related('diplomatura', 'profesor_titular')
             .prefetch_related('inscripciones', 'profesores')
             .order_by('diplomatura__nombre', 'nombre'))
 
-    if getattr(u, 'is_superuser', False) or u.nivel >= 4:
+    if u.nivel >= 4 or getattr(u, 'is_superuser', False):
         mats = base
     else:
         mats = base.filter(
-            Q(inscripciones__user=u) |
-            Q(profesores__user=u) |
-            Q(diplomatura__coordinadores=u)
+            models.Q(inscripciones__user=u) |
+            models.Q(profesor_titular=u) |
+            models.Q(profesores__user=u) |
+            models.Q(diplomatura__coordinadores=u)
         ).distinct()
+    
     return render(request, 'asistencias/materias.html', {'materias': mats})
 
 @requiere_nivel(1)
@@ -160,19 +168,31 @@ def insc_materia_por_codigo(request):
 def ver_clases_materia(request, materia_id):
     materia = get_object_or_404(Materia, id=materia_id)
     u = request.user
+    
+    es_supervisor = u.nivel >= 4 or getattr(u, 'is_superuser', False)
+    es_docente = (materia.profesor_titular == u or 
+                  materia.profesores.filter(user=u).exists())
+    es_coord = (u.nivel >= 3 and 
+                materia.diplomatura.coordinadores.filter(id=u.id).exists())
     es_alumno = InscripcionMateria.objects.filter(user=u, materia=materia).exists()
-    es_docente = ProfesorMateria.objects.filter(user=u, materia=materia).exists() or materia.profesor_titular == u
-    es_coord = u.nivel >= 3 and diplomatura.coordinadores.filter(id=u.id).exists()
 
-    if not (es_alumno or es_docente or es_coord or u.nivel >= 4):
-        return HttpResponseForbidden("No tienes acceso a esta materia.")
+    # Si es docente, coordinador o supervisor, puede gestionar
+    can_manage = (es_docente or es_coord or es_supervisor) and u.nivel != 6
 
-    now = timezone.localtime()
-    clases = materia.clases.all().order_by('-fecha')
-    return render(request, 'asistencias/clases.html', {
-        'materia': materia, 'clases': clases,
-        'es_docente': es_docente, 'es_coord': es_coord, 'es_alumno': es_alumno,
-    })
+    if es_supervisor or es_docente or es_coord or es_alumno:
+        clases = materia.clases.all().order_by('-fecha')
+        return render(request, 'asistencias/clases.html', {
+            'materia': materia, 
+            'clases': clases,
+            'es_docente': es_docente, 
+            'es_coord': es_coord, 
+            'es_alumno': es_alumno,
+            'es_supervisor': es_supervisor,
+            'can_manage': can_manage,  # <--- Nueva variable para el template
+        })
+    
+    messages.error(request, "No tienes permiso para acceder a esta materia.")
+    return redirect('asistencias:home')
 
 @requiere_nivel(1)
 def marcar_presente(request, clase_id):

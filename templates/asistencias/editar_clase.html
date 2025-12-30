@@ -39,7 +39,7 @@
 
         <div style="margin-top: 25px; display: flex; gap: 10px;">
             <button type="submit" class="btn">Guardar Cambios</button>
-            <a href="{% url 'asistencias:home' %}" class="btn secondary">Cancelar</a>
+            <a href="{% url 'asistencias:ver_clases' materia_id=clase.materia.id %}" class="btn secondary">Cancelar</a>
             
             {% if es_coord %}
             <a href="{% url 'asistencias:eliminar_clase' clase.id %}" class="btn" style="background: #c0392b; margin-left: auto;">Eliminar Clase</a>

@@ -1,104 +1,142 @@
-# FILE: asistencias/views/docente.py
-from django.shortcuts import render, redirect, get_object_or_404
+from django.db import models
+from django.db.models import Q
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from django.http import HttpResponseForbidden
-from django.utils import timezone
-from datetime import timedelta
-from asistencias.models import Diplomatura, Materia, Clase, InscripcionMateria, ProfesorMateria, Asistencia, AccesoToken
-from asistencias.permissions import requiere_nivel
-from asistencias.forms import CrearMateriaForm, ClaseForm
+from django.http import HttpResponseForbidden, HttpResponse
+from django.contrib.auth import get_user_model
+from functools import wraps
+from ..models import Clase, Materia, User, Nota, Asistencia 
+import csv
 
+# 1. DECORADOR DE SEGURIDAD
+def requiere_nivel(nivel_minimo):
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            if request.user.is_authenticated and request.user.nivel >= nivel_minimo:
+                return view_func(request, *args, **kwargs)
+            return HttpResponseForbidden("No tienes permiso para acceder a esta página.")
+        return _wrapped_view
+    return decorator
+
+# 2. LISTADO GENERAL DE ASISTENCIA (MATRIZ)
 @requiere_nivel(2)
-def crear_clase(request, materia_id):
-    # RESTRICCIÓN ESTRICTA: Solo Coordinadores (nivel 3+) pueden crear clases.
-    if request.user.nivel < 3:
-        return HttpResponseForbidden("Solo los coordinadores pueden crear o definir cronogramas de clases.")
-    
+def listado_presentes(request, materia_id):
     materia = get_object_or_404(Materia, id=materia_id)
-    if request.method == 'POST':
-        form = ClaseForm(request.POST)
-        if form.is_valid():
-            hi = form.cleaned_data['hora_inicio']
-            hf = form.cleaned_data['hora_fin']
-            tema = form.cleaned_data['tema']
-            link = form.cleaned_data.get('link_clase', '')
-            cada_dias = form.cleaned_data.get('repetir_cada')
-            hasta = form.cleaned_data.get('repetir_hasta')
+    # Filtro por materia para evitar el mensaje "Sin clases"
+    clases = Clase.objects.filter(materia=materia).order_by('fecha')
+    
+    alumnos = User.objects.filter(
+        Q(insc_materias__materia=materia) | Q(insc_diplos__diplomatura=materia.diplomatura),
+        nivel=1
+    ).distinct().order_by('last_name')
 
-            clase_base = Clase.objects.create(
-                materia=materia, fecha=hi.date(), hora_inicio=hi, hora_fin=hf,
-                tema=tema, link_clase=link, creado_por=request.user
-            )
-            count = 1
-            if cada_dias and hasta:
-                curr_hi, curr_hf = hi + timedelta(days=cada_dias), hf + timedelta(days=cada_dias)
-                while curr_hi.date() <= hasta:
-                    Clase.objects.create(
-                        materia=materia, fecha=curr_hi.date(), hora_inicio=curr_hi, 
-                        hora_fin=curr_hf, tema=tema, link_clase=link, creado_por=request.user
-                    )
-                    curr_hi += timedelta(days=cada_dias)
-                    curr_hf += timedelta(days=cada_dias)
-                    count += 1
-            messages.success(request, f"Se crearon {count} clase(s).")
-            return redirect('asistencias:ver_clases', materia_id=materia.id)
-    else:
-        # Se pre-carga la fecha si viene por GET desde el calendario
-        fecha_get = request.GET.get('fecha')
-        form = ClaseForm(initial={'materia': materia, 'link_clase': materia.link_clase, 'fecha': fecha_get})
-    return render(request, 'asistencias/crear_clase.html', {'materia': materia, 'form': form})
+    return render(request, 'asistencias/listado_presentes.html', {
+        'materia': materia,
+        'clases': clases,
+        'alumnos': alumnos,
+    })
 
+# 3. DETALLE DE ASISTENCIA POR CLASE (La que faltaba en el import)
+@requiere_nivel(2)
+def detalle_asistencia_clase(request, clase_id):
+    clase = get_object_or_404(Clase, id=clase_id)
+    materia = clase.materia
+    
+    alumnos_inscritos = User.objects.filter(
+        Q(insc_materias__materia=materia) | Q(insc_diplos__diplomatura=materia.diplomatura),
+        nivel=1
+    ).distinct().order_by('last_name')
+
+    # Obtenemos IDs de alumnos presentes usando el campo 'alumno_id'
+    presentes_ids = clase.asistencias.filter(presente=True).values_list('alumno_id', flat=True)
+    
+    lista_asistencia = []
+    for alumno in alumnos_inscritos:
+        registro = clase.asistencias.filter(alumno=alumno).first()
+        lista_asistencia.append({
+            'alumno': alumno,
+            'asistio': alumno.id in presentes_ids,
+            'hora_registro': registro.timestamp if registro else None
+        })
+        
+    return render(request, 'asistencias/detalle_asistencia.html', {
+        'clase': clase,
+        'materia': materia,
+        'lista_asistencia': lista_asistencia
+    })
+
+# 4. EXPORTAR ASISTENCIA A CSV
+@requiere_nivel(2)
+def exportar_asistencia_materia(request, materia_id):
+    materia = get_object_or_404(Materia, id=materia_id)
+    clases = materia.clases.all().order_by('fecha')
+    
+    alumnos = User.objects.filter(
+        Q(insc_materias__materia=materia) | Q(insc_diplos__diplomatura=materia.diplomatura),
+        nivel=1
+    ).distinct().order_by('last_name')
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="asistencia_{materia.nombre}.csv"'
+
+    response.write(u'\ufeff'.encode('utf8'))
+    writer = csv.writer(response)
+    
+    header = ['Alumno', 'DNI'] + [clase.fecha.strftime('%d/%m/%Y') for clase in clases]
+    writer.writerow(header)
+
+    for alumno in alumnos:
+        fila = [f"{alumno.last_name}, {alumno.first_name}", alumno.dni]
+        for clase in clases:
+            asistio = clase.asistencias.filter(alumno=alumno, presente=True).exists()
+            fila.append('P' if asistio else 'A')
+        writer.writerow(fila)
+        
+    return response
+
+# 5. VER NOTAS DE LA MATERIA
+@requiere_nivel(2)
+def ver_notas_materia(request, materia_id):
+    materia = get_object_or_404(Materia, id=materia_id)
+    
+    alumnos = User.objects.filter(
+        Q(insc_materias__materia=materia) | Q(insc_diplos__diplomatura=materia.diplomatura),
+        nivel=1
+    ).distinct().order_by('last_name')
+
+    listado_notas = []
+    for alumno in alumnos:
+        notas_alumno = Nota.objects.filter(alumno=alumno, materia=materia)
+        listado_notas.append({
+            'alumno': alumno,
+            'notas': notas_alumno
+        })
+
+    return render(request, 'asistencias/ver_notas_materia.html', {
+        'materia': materia,
+        'listado_notas': listado_notas
+    })
+
+# 6. EDITAR TEMA DE CLASE
 @requiere_nivel(2)
 def editar_clase(request, clase_id):
     clase = get_object_or_404(Clase, id=clase_id)
-    u = request.user
-    # Es coordinador si nivel >= 3 o si está en la lista de coordinadores de la diplo
-    es_coord = u.nivel >= 3 or clase.materia.diplomatura.coordinadores.filter(id=u.id).exists()
+    from ..forms import ClaseForm
     
-    # El docente nivel 2 solo puede entrar si es titular o profesor asignado
-    es_profe = ProfesorMateria.objects.filter(user=u, materia=clase.materia).exists() or clase.materia.profesor_titular == u
-
-    if not (es_coord or es_profe):
-        return HttpResponseForbidden("No tienes permiso para editar esta clase.")
-
     if request.method == 'POST':
         form = ClaseForm(request.POST, instance=clase)
+        if request.user.nivel == 2:
+            form.fields.pop('fecha', None)
+            form.fields.pop('hora_inicio', None)
+            form.fields.pop('hora_fin', None)
+            form.fields.pop('materia', None)
+        
         if form.is_valid():
-            instancia = form.save(commit=False)
-            # SI NO ES COORDINADOR: Forzamos que los campos administrativos no cambien
-            if not es_coord:
-                # Recuperamos los valores originales de la DB para asegurar que no se alteren
-                clase_original = Clase.objects.get(id=clase.id)
-                instancia.fecha = clase_original.fecha
-                instancia.hora_inicio = clase_original.hora_inicio
-                instancia.hora_fin = clase_original.hora_fin
-                instancia.materia = clase_original.materia
-            
-            instancia.save()
-            messages.success(request, "Cambios guardados correctamente.")
-            return redirect('asistencias:home')
+            form.save()
+            messages.success(request, "Cambios guardados exitosamente.")
+            return redirect('asistencias:ver_clases', materia_id=clase.materia.id)
     else:
         form = ClaseForm(instance=clase)
-        # Si es Profe (Nivel 2), deshabilitamos los campos en el formulario (visual)
-        if not es_coord:
-            for campo in ['fecha', 'hora_inicio', 'hora_fin', 'materia']:
-                form.fields[campo].widget.attrs['readonly'] = True
-                form.fields[campo].widget.attrs['class'] = 'form-control bg-dark muted'
 
-    return render(request, 'asistencias/editar_clase.html', {
-        'form': form, 
-        'clase': clase, 
-        'es_coord': es_coord
-    })
-
-@requiere_nivel(2)
-def eliminar_clase(request, clase_id):
-    clase = get_object_or_404(Clase, id=clase_id)
-    # SOLO Coordinadores eliminan
-    if request.user.nivel < 3:
-        return HttpResponseForbidden("Solo los coordinadores pueden eliminar clases.")
-    if request.method == 'POST':
-        clase.delete()
-        messages.success(request, "Clase eliminada del cronograma.")
-        return redirect('asistencias:home')
-    return render(request, 'asistencias/eliminar_clase.html', {'clase': clase})
+    return render(request, 'asistencias/editar_clase.html', {'form': form, 'clase': clase})

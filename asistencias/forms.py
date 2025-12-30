@@ -13,7 +13,6 @@ class CrearMateriaForm(forms.ModelForm):
         empty_label="Seleccioná una diplomatura",
         widget=forms.Select(attrs={"class": "input"})
     )
-
     class Meta:
         model = Materia
         fields = ["diplomatura", "nombre", "descripcion", "codigo", "link_clase"]
@@ -28,44 +27,34 @@ class MateriaForm(forms.ModelForm):
         model = Materia
         fields = ['diplomatura', 'nombre', 'descripcion', "link_clase"]
 
+# FILE: asistencias/forms.py
+
 class ClaseForm(forms.ModelForm):
-    # Campos adicionales para la creación masiva
-    repetir_cada = forms.IntegerField(
-        required=False, 
-        min_value=1, 
-        label="Repetir cada (días)",
-        help_text="Dejar vacío si es clase única"
-    )
-    repetir_hasta = forms.DateField(
-        required=False, 
-        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-        label="Repetir hasta"
-    )
+    # ... (mantén tus campos repetir_cada y repetir_hasta iguales)
 
     class Meta:
         model = Clase
-        fields = [
-            'materia', 
-            'fecha', 
-            'hora_inicio', 
-            'hora_fin', 
-            'tema', 
-            'link_clase', 
-            'comentarios_docente'
-        ]
-        widgets = {
-            'materia': forms.Select(attrs={'class': 'form-control'}),
-            'fecha': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'hora_inicio': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'hora_fin': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'tema': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Introducción a Python'}),
-            'link_clase': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://zoom.us/j/...'}),
-            'comentarios_docente': forms.Textarea(attrs={
-                'class': 'form-control', 
-                'rows': 3, 
-                'placeholder': 'Observaciones para los alumnos o el coordinador...'
-            }),
-        }
+        fields = ['materia', 'fecha', 'hora_inicio', 'hora_fin', 'tema', 'link_clase', 'comentarios_docente']
+        # ... (mantén tus widgets iguales)
+
+    def __init__(self, *args, **kwargs):
+        super(ClaseForm, self).__init__(*args, **kwargs)
+        # 1. Hacemos que nada sea obligatorio para el validador
+        for field in self.fields:
+            self.fields[field].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # 2. Si estamos EDITANDO, ignoramos errores de formato en los campos fijos
+        if self.instance and self.instance.pk:
+            campos_fijos = ['materia', 'fecha', 'hora_inicio', 'hora_fin']
+            for campo in campos_fijos:
+                # Si el campo tiene error de formato o viene vacío, lo limpiamos
+                if campo in self._errors:
+                    del self._errors[campo]
+                # Aseguramos que el valor final sea el que ya estaba guardado
+                cleaned_data[campo] = getattr(self.instance, campo)
+        return cleaned_data
 
 class MarcarPresenteForm(forms.Form):
     dni = forms.CharField(label="DNI", max_length=20)
